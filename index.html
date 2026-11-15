@@ -162,21 +162,31 @@ body.wm #lgr .note,body.wm #clr .note{margin:2px 0}
 body.wm #lg .lgw{overflow:visible}
 body.wm #lgc table,body.wm #clc table{font-size:12.5px}
 body.wm #lgc th,body.wm #lgc td,body.wm #clc th,body.wm #clc td{padding:6px 2px}
+/* 온라인 맞짱 */
+#m_ol{display:block;width:100%;margin:14px 0 0;padding:12px 4px;font-size:14px;background:var(--a);color:#fff}
+body.wm #nr #m_ol{margin:0}
+#mp h3{font:12px/1.4 'Press Start 2P',monospace;margin:2px 0 8px}
+#mp input{display:block;width:100%;box-sizing:border-box;font:700 20px system-ui,sans-serif;padding:10px 8px;margin:10px 0;text-align:center;letter-spacing:2px}
+#mp .bar{margin:0 0 6px}#mp_ok{background:var(--b);color:#fff}#mp_st{min-height:36px;font-weight:700;opacity:1}
+#dvr button{background:#ffe14d;color:#1c1b19}
 </style></head><body>
 <nav id="tabs"><button id="t_main">메인</button><button id="t_lg">리그 테이블</button><button id="t_cl">챔피언스리그</button></nav>
 <div id="hud"><b id="hn">MY TEAM</b><span id="sc">0 - 0</span><i id="oc">---</i><span id="tm">0'</span><em id="xt" hidden></em><button id="sk">경기 건너뛰기</button></div>
 <div id="views"><canvas id="c"></canvas><canvas id="pad"></canvas><div id="so" hidden></div><div id="end" hidden><button id="rs">메인으로</button><div id="er"></div><div id="rt"></div></div><div id="pks" hidden><h3 id="pkh">PK 키커 선택</h3><div class="pg" id="pkl"></div></div></div>
 <div id="ctl"><p id="hint"></p>
 <div class="row" id="ch" hidden><button id="bd">드리블</button><button id="bp">패스</button><button id="bs">슛</button></div>
-<div id="aim" hidden><button id="bk">다른 행동 고르기</button></div></div>
+<div id="aim" hidden><button id="bk">다른 행동 고르기</button></div>
+<div class="row" id="dvr" hidden><button data-dz="0">◀ 왼쪽</button><button data-dz="1">가운데</button><button data-dz="2">오른쪽 ▶</button></div></div>
 <div id="md" class="md" hidden><div class="mdb" id="mdb"></div></div>
+<div id="mp" class="md" hidden><div class="mdb"><h3>온라인 맞짱</h3><div class="note">친구와 같은 코드를 입력하면 각자의 팀으로 1:1 대결을 합니다. 전·후반 3번씩 공격 찬스가 오고, 수비할 때는 상대가 슛하는 순간 키퍼가 몸을 날릴 방향을 고릅니다.</div><input id="mp_in" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="코드 입력" aria-label="대전 코드"><div class="bar"><button id="mp_ok">입장</button><button id="mp_no">취소</button></div><div class="note" id="mp_st" role="status" aria-live="polite"></div></div></div>
 <div id="main" hidden><h2 id="m_h"><span id="m_tn" role="button" tabindex="0" title="팀 이름 변경">MY TEAM</span><i class="ted" aria-hidden="true">✎</i><small id="m_as"></small></h2><div id="m_ed" hidden><div class="r"><input id="m_in" maxlength="16" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="팀 이름"><button id="m_ok" aria-label="저장">✓</button><button id="m_no" aria-label="취소">✕</button></div><div class="h"><span id="m_cn">0/16</span>자 · 한글·영문·숫자 · 비워서 저장하면 MY TEAM</div></div>
 <div class="cards"><button id="m_l"></button><button id="m_m"></button><button id="m_s"></button></div>
 <div class="bar"><button id="m_go"><span id="m_gt">경기 시작 ▶</span><small id="m_nx"></small></button><button id="m_new">새 게임</button></div>
-<div class="note" id="m_warn"></div><div id="pane"></div></div>
+<div class="note" id="m_warn"></div><div id="pane"></div><button id="m_ol">온라인 맞짱</button></div>
 <div id="lg" hidden><h2>LEAGUE TABLE</h2><div class="lgb" id="lg_b"><button id="lv_t" data-lv="t">리그 순위</button><button id="lv_g" data-lv="g">득점 순위</button><button id="lv_a" data-lv="a">도움 순위</button><button id="lv_r" data-lv="r">평균평점 순위</button></div><div class="note" id="lg_sub"></div><div class="lgw"><table id="lg_t"></table></div><button class="mini" id="lg_more" hidden>더 보기</button></div>
 <div id="cl" hidden><h2>CHAMPIONS LEAGUE</h2><div class="lgb" id="cl_b"><button id="cv_g" data-cv="g">조별예선</button><button id="cv_k" data-cv="k">토너먼트</button><button id="cv_s" data-cv="s">일정·결과</button><button id="cv_t" data-cv="t">참가팀·기록</button></div><div class="note" id="cl_sub"></div><div id="cl_c"></div></div>
 <script>
+let ON=null;/* 온라인 맞짱 진행 상태(없으면 null) — 아래 '온라인 맞짱' 블록 참고 */
 const W=180,H=280,VH=140,GL=6,GB=H-6,GW=14,CX=W/2,PY=27,R=Math.random;/* PY: 페널티 마크 y = 골라인에서 21px = 골문 중앙에서 11m (페널티 박스 깊이 16.5m 가 32px 이므로 2/3 지점) */
 const cv=document.getElementById('c'),g=cv.getContext('2d'),pad=document.getElementById('pad'),pg=pad.getContext('2d');
 let Z=2;const FF=10;let WS=0,DQ=[],DN=0,XDC=0,XDP=.5,AWQ=[];/* 조종 상황(PK·프리킥 제외) 스케줄: DQ=이번 경기 예정 시각(분) — 전반 3·후반 3, 우리 팀 총합 스탯이 상대보다 2 이상 높으면 그중 1번 제외, DN=다음 차례, XDC=추가 시간에 조종 상황 1회 추가(대기 중), XDP=그 확률 */
@@ -184,7 +194,7 @@ function dGap(){const m=t=>{const L=P.filter(p=>p.t==t);return L.length?L.reduce
 function dPlan(){const q=[];for(const h of[0,45])for(let j=0;j<3;j++)q.push(h+3+13*j+R()*9);if(dGap()>=2)q.splice(Math.floor(R()*q.length),1);return q}
 /* 예정 시각이 지난 뒤 우리 팀이 공격 지역(y<95)에서 공을 잡으면 발동. 늦어질수록 허용 범위를 넓혀(95→115→140→어디서든) 반드시 소화 */
 const dLd=(o,w)=>o<0?0:o<w?95:o<2*w?115:o<2.7*w?140:H;
-function dChk(){if(ET)return 0;const y=car.y;if(DN<DQ.length&&y<dLd(clock-DQ[DN],3)){DN++;cd=55;return 1}if(XDC&&y<dLd(clock-90,1)){XDC=0;cd=55;return 1}return 0}/* WS: 프리킥이 수비벽에 맞아 튕겨 나오는 동안 일반 속도를 유지하는 남은 시간(초) */
+function dChk(){if(ET)return 0;const y=car.y;if(DN<DQ.length&&y<dLd(clock-DQ[DN],ON?2:3)){DN++;cd=55;return 1}if(!ON&&XDC&&y<dLd(clock-90,1)){XDC=0;cd=55;return 1}return 0}/* WS: 프리킥이 수비벽에 맞아 튕겨 나오는 동안 일반 속도를 유지하는 남은 시간(초) */
 const $=id=>document.getElementById(id),cl=(v,a,b)=>Math.max(a,Math.min(b,v)),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let WIDE=false;/* 가로로 넓은 패드 배치 여부 */
 function setWide(on){if(on==WIDE)return;WIDE=on;$('views').classList.toggle('wide',on);
@@ -196,10 +206,10 @@ function setWide(on){if(on==WIDE)return;WIDE=on;$('views').classList.toggle('wid
 let WM=false;
 const mkDiv=id=>{const e=document.createElement('div');e.id=id;return e};
 function setWM(on){if(on==WM)return;WM=on;document.body.classList.toggle('wm',on);const m=$('main'),L=$('lg'),C=$('cl');
- if(on){const nr=mkDiv('nr');m.insertBefore(mkDiv('nl'),$('pane'));nr.append($('m_h'),$('m_ed'),m.querySelector('.cards'),m.querySelector('.bar'),$('m_warn'));m.append(nr);
+ if(on){const nr=mkDiv('nr');m.insertBefore(mkDiv('nl'),$('pane'));nr.append($('m_h'),$('m_ed'),m.querySelector('.cards'),m.querySelector('.bar'),$('m_warn'),$('m_ol'));m.append(nr);
   const lc=mkDiv('lgc'),lr=mkDiv('lgr'),cc=mkDiv('clc'),cr=mkDiv('clr');lr.append(L.querySelector('h2'),$('lg_b'),$('lg_sub'));lc.append(L.querySelector('.lgw'),$('lg_more'));L.append(lc,lr);
   cr.append(C.querySelector('h2'),$('cl_b'),$('cl_sub'));cc.append($('cl_c'));C.append(cc,cr)}
- else{wmTabs();m.prepend($('m_h'),$('m_ed'),m.querySelector('.cards'),m.querySelector('.bar'),$('m_warn'));$('nl').remove();$('nr').remove();
+ else{wmTabs();m.prepend($('m_h'),$('m_ed'),m.querySelector('.cards'),m.querySelector('.bar'),$('m_warn'));m.append($('m_ol'));$('nl').remove();$('nr').remove();
   L.append(L.querySelector('h2'),$('lg_b'),$('lg_sub'),L.querySelector('.lgw'),$('lg_more'));$('lgc').remove();$('lgr').remove();
   C.append(C.querySelector('h2'),$('cl_b'),$('cl_sub'),$('cl_c'));$('clc').remove();$('clr').remove()}
  wmTabs();if(tab=='main')render()}
@@ -375,11 +385,11 @@ function finRate(){if(RTG)return;const L=P.map(p=>{const w=rate(p.s);return{t:p.
  RTG={r:MR,sc:score.slice(),oc:OPP[2],oN:OPP[1],pl:L.map(x=>[x.t,x.n,x.g,x.r,x.gl,x.as]),mo,gl:GLG.map(e=>({t:e.t,n:e.n,c:e.c,m:mt(e.c)})).sort((x,y)=>x.c-y.c)}}
 /* 경기 시간: 전반 45분에 일시정지(HALF TIME)했다가 후반 킥오프(상대 팀), 90분에 추가시간 1~11분(평균 약 2분: 1+지수분포 내림, 한 번만 결정)을 부여하고 그 시간이 끝나면 종료. mt = 득점 시각 표기(90분 이후는 90+N') */
 const mt=c=>ETS>=0&&c>ETS?Math.min(120,90+Math.ceil(c-ETS))+"'":c>=90?'90+'+(XT>0?Math.min(XT,Math.floor(c-90)+1):1)+"'":Math.max(1,Math.floor(c))+"'";
-function halfTime(){HF=1;clock=45;toast('전반 종료',2400,'pk');result('HALF TIME',2.5,()=>kick(1,'SECOND HALF'))}
+function halfTime(){HF=1;clock=45;toast('전반 종료',2400,'pk');result('HALF TIME',2.5,()=>kick(ON?(ON.host?1:0):1,'SECOND HALF'))}
 function stoppage(){XT=Math.min(11,1+Math.floor(-Math.log(1-R())*1.5));XDC=R()<XDP?1:0;ui()}
 const erHTML=(a,b,cm)=>(cm?`<div class="note">${esc(cm.lb)}</div>`:'')+`<div class="ft">FULL TIME</div><div class="sb"><span>${esc(TN)}</span><b>${a} - ${b}</b><span>${esc(OPP[1])}</span></div>`+(cm&&cm.leg2?`<div class="note">합계 ${a+cm.ag[0]} - ${b+cm.ag[1]}</div>`:'')+(ET?'<div class="note">연장전 포함</div>':'')+(SOR?`<div class="note">승부차기 ${SOR.sc[0]} - ${SOR.sc[1]} · ${esc(SOR.w?OPP[1]:TN)} 승리</div>`:'');
 function fullTime(now){clock=ET?ETS+30:90+Math.max(0,XT);if(now)return endScr();if(!ET&&etNeed())return extra();toast('경기 종료',2000,'pk');result('FULL TIME',2,endScr)}
-function endScr(){if(etNeed()&&!SOR)return soStart();S='END';$('toast').classList.remove('on');finRate();const a=score[0],b=score[1],cm=CM;CM?clRec(a,b):recSched(a,b);$('er').innerHTML=erHTML(a,b,cm);ui()}
+function endScr(){if(etNeed()&&!SOR)return soStart();S='END';$('toast').classList.remove('on');finRate();const a=score[0],b=score[1],cm=ON?{lb:'온라인 맞짱'}:CM;if(ON)mpFin();else CM?clRec(a,b):recSched(a,b);$('er').innerHTML=erHTML(a,b,cm);ui()}
 function pGoal(){if(fl&&fl.shot||Math.abs(ball.x-CX)>GW-1)return 0;const t=ball.y<=GL-1?0:ball.y>=GB+2?1:-1;if(t<0)return 0;
  if(fl||lo&&(lo.ps||lo.df&&t)){const k=P[t?0:11];k.x=cl(ball.x,8,W-8);k.y=ball.y+(t?-2:2);dive(k,ball.x,0);giveBall(k);return 1}/* 안전망: 패스 기원 공은 절대 득점 불가 */
  if(lo&&lo.df){lo.df.sh.s.sh--;lo.df.bl.s.bk--}/* 굴절 득점: 막힘(차단) 기록을 취소하고 슈터의 일반 골로 기록 */
@@ -431,7 +441,7 @@ function deflect(p,ax,ay,dx,dy,sp){const m=Math.hypot(dx,dy)||1,ux=dx/m,uy=dy/m,
  let vx=ux*k*.85,vy=uy*k*.85;if(dn<0){vx=k*(.85*(ux-dn*nx)-.5*dn*nx);vy=k*(.85*(uy-dn*ny)-.5*dn*ny)}
  const x=p.x+h1*A*rx+h2*B*fx,y=p.y+h1*A*ry+h2*B*fy;let g=0;for(let u=0;u<2;u+=.02){const w=(1-Math.exp(-2.6*u))/2.6;if(y+vy*w<=GL-1&&Math.abs(x+vx*w-CX)<=GW-1){g=1;break}}
  return{x,y,vx,vy,g}}
-function shotEnd(res,sh,bl,df){cd=55;ex=null;if(res=='SAVED'&&!touch(P[11]))res='GOAL';if(sh&&res!='GOAL'){sh.s.sh++;if(res=='SAVED'){sh.s.sot++;P[11].s.sv++}else if(res=='BLOCKED'&&bl)bl.s.bk++}if(res=='GOAL'){if(sh)lastB=sh;return goal(0)}
+function shotEnd(res,sh,bl,df){cd=55;ex=null;if(res=='SAVED'&&!touch(P[11])){if(ON){P[11].x=cl(ball.x,8,W-8);P[11].y=ball.y+2}else res='GOAL'}if(sh&&res!='GOAL'){sh.s.sh++;if(res=='SAVED'){sh.s.sot++;P[11].s.sv++}else if(res=='BLOCKED'&&bl)bl.s.bk++}if(res=='GOAL'){if(sh)lastB=sh;return goal(0)}
  if(res=='BLOCKED'&&df){/* 굴절: 멈추지 않고 맞은 지점에서 굴절 속도로 이어짐. 골문 안으로 향하면 60%는 키퍼가 처리(ps), 나머지는 일반 골 판정(pGoal) */
   lo={vx:df.vx,vy:df.vy,df:{sh,bl}};if(df.g&&R()<.6)lo.ps=1;bl.st=.35;lT=1;if(df.fk)WS=1.8;/* 프리킥 벽 충돌: 튕겨 나오는 모습을 일반 속도로 보여준 뒤 배속 복귀 */pop={p:bl,u:Date.now()+900,t:'BLOCKED',c:'#fff'};S='RESUME';timer=.2;ui();return}
  result(res=='SAVED'?'SAVED!':res,1,()=>{if(res=='BLOCKED'){lo={vx:(R()-.5)*60,vy:(R()-.5)*60+10};lT=1}else{car=P[11];if(DV)DV.v=0;if(res=='WIDE')nof={p:car,x:car.x,y:car.y}}S='RESUME';timer=.35;ui()})}
@@ -440,12 +450,13 @@ function step(dt){
  if(DV){DV.e+=dt;if(DV.e>1.1||DV.g&&DV.e<.05&&!(fl&&!fl.shot||lo&&lo.ps))DV=null}
  if(S=='AUTO'||S=='RESUME'){if(S=='RESUME'){timer-=dt;if(timer<=0)S='AUTO'}
   if(S=='AUTO'&&(pkChk()||fkChk()))return;
-  clock+=dt*1.5/FF;cd-=dt;dcd-=dt;if(!car&&!fl&&!lo){let b=null,m=1e9;for(const p of P){const d=dist(p,ball);if(d<m){m=d;b=p}}car=b}
+  clock+=dt*1.5/FF;if(ON)mpHold();cd-=dt;dcd-=dt;if(!car&&!fl&&!lo){let b=null,m=1e9;for(const p of P){const d=dist(p,ball);if(d<m){m=d;b=p}}car=b}
   if(car)autoCar(dt);sim(dt);upBall(dt);
   if(S=='AUTO'&&car){if(car.t==0&&dChk()){toDecision()}
+   else if(ON&&car.t==1&&mpChk()){mpHand()}
    else if(car.t==1&&car.y>GB-95&&dcd<=0){dcd=55;if(R()<pgoal())goal(1);else{const o=P.filter(q=>q.t==0&&q.i&&q.st<=0).sort((m,n)=>dist(m,car)-dist(n,car))[0];if(o)tackle(car,o,1,0,1)}}
    else if(car.t==0&&car.y<30||car.t==1&&car.y>GB-30&&dcd>0){const o=P.filter(q=>q.t!=car.t&&q.i&&q.st<=0).sort((m,n)=>dist(m,car)-dist(n,car))[0];if(o)tackle(car,o,1)}}
-  if(S!='MSG'&&S!='DANG'&&S!='DECISION'){if(!HF&&clock>=45)halfTime();else if(ET)etChk();else if(clock>=90){if(XT<0)stoppage();if(clock>=90+XT)fullTime()}}}
+  if(S!='MSG'&&S!='DANG'&&S!='DECISION'&&S!='VIEW'){if(!HF&&clock>=45)halfTime();else if(ET)etChk();else if(clock>=90){if(XT<0)stoppage();if(clock>=90+XT)fullTime()}}}
  else if(S=='EXEC'){if(!PK)clock+=dt*.25;
   if(ex&&ex.k=='drib'&&car){mv(car,ex.tx,ex.ty,(P.some(q=>q.t==1&&dist(q,car)<10)?28:40)*smul(car,true)*(dS&&Math.hypot(car.x-dS.x,car.y-dS.y)<dS.d?1.8:1),dt);
    for(const p of P)if(p.t==1){const d=Math.hypot(p.x-ball.x,p.y-ball.y);if(d>7)p.tk=0;else if(d<3.6&&!p.tk&&p.st<=0){p.tk=1;if(R()<cl(.16+.52*stat(car,'dribbling')/20-.15*(stat(p,'defending')-12)/20,.15,.75)){dS={x:car.x,y:car.y,d:.1*Math.hypot(ex.tx-car.x,ex.ty-car.y)};car.vx+=car.dx*30;car.vy+=car.dy*30;pop={p:car,u:Date.now()+900};car.s.dw++;p.st=.3}else{pop={p:car,u:Date.now()+900,t:'드리블 실패!',c:'#ff4b4b'};cd=20;tackle(car,p,1,ball)}break}}
@@ -561,22 +572,23 @@ function plan(){if(!path.length||!car)return null;const s=path[0],e=path[path.le
  if(mode=='pass'){const n=cl(l*1.6,22,130),nx=-dy/l,ny=dx/l;let dev=0;for(const q of path){const v=(q[0]-s[0])*nx+(q[1]-s[1])*ny;if(Math.abs(v)>Math.abs(dev))dev=v}const k=bd(dev,'passing')*PBD;return{n,tx:cl(car.x+dx/l*n,8,W-8),ty:cl(car.y+dy/l*n,cam+6,cam+VH-6),curl:Math.abs(dev)>4,bx:nx*k,by:ny*k}}
  if(dy>-6)return null;const nx=-dy/l,ny=dx/l;let dev=0;for(const q of path){const v=(q[0]-s[0])*nx+(q[1]-s[1])*ny;if(Math.abs(v)>Math.abs(dev))dev=v}
  const k=bd(dev,'shooting');return{tx:car.x+dx*(car.y-GL)/-dy,ty:GL,curl:Math.abs(dev)>4,bx:nx*k,by:ny*k}}
-function commit(){const pl=plan();if(!pl){hint(mode=='shoot'?'위쪽 골대 방향으로 드래그하세요':'조금 더 길게 드래그하세요');return}
+function commit(p0){const pl=p0||plan();if(!pl){hint(mode=='shoot'?'위쪽 골대 방향으로 드래그하세요':'조금 더 길게 드래그하세요');return}
  if(PK&&PK.z==null)return pkShot(pl);
  if(PK&&!PK.go){PK.go=1;PK.t=0;S='FKR';ui();return}/* 프리킥: 먼저 키커가 공으로 달려가고(fkRun), 도착하면 같은 commit 이 다시 불려 아래 일반 슈팅 처리로 이어짐 */
  if(mode=='drib'){dS=null;ex={k:'drib',tx:pl.tx,ty:pl.ty};S='EXEC';ui();return}
  if(mode=='pass'){let rc=null,m=1e9;for(const q of P)if(q.t==0&&q!==car&&q.i){const d=Math.hypot(q.x-pl.tx,q.y-pl.ty);if(d<m){m=d;rc=q}}
   const pe=pl.n*(.09-.07*stat(car,'passing')/20),nz=()=>(R()+R()+R()-1.5)*pe;S='EXEC';ex={k:'pass'};fly(cl(pl.tx+nz(),8,W-8),cl(pl.ty+nz(),cam+6,cam+VH-6),50+pl.n*1.1,{team:0,rcv:rc,ip:cl(.5-pl.n*.0016,.3,.5),bx:pl.curl?pl.bx:0,by:pl.curl?pl.by:0,land:landPass,vis:1});ui();return}
+ if(ON&&ON.dz==null)return mpAsk(pl);/* 온라인: 상대 키퍼의 다이빙 선택을 받은 뒤 같은 조준으로 다시 들어옴 */
  const gk=P[11],sh0=car,FK=!!PK,d0=FK?Math.hypot(car.x-CX,car.y-GL):car.y-GL,curl=pl.curl,sd=(curl?2+d0*.045:3+d0*.075)*((1.3-.6*stat(car,'shooting')/20)/.94),tx=pl.tx+(R()+R()+R()-1.5)*sd*1.6;let res,ex_=tx,ey_=GL-3,blk=null,df=null;const spd=(curl?160:240)*(.85+.3*stat(car,'shooting')/20)/1.03,dr=Math.abs(tx-gk.x)<2.5?0:Math.sign(tx-gk.x),gx=dr?tx-dr*3:tx;
  if(FK){/* 수비벽 통과 확률 = (슈팅 스탯-1)x5% (20→95%, 10→45%, 1→0%). 못 넘으면 슈팅선에 가장 가까운 벽 선수에게 맞음 */
   if(R()>=cl((stat(car,'shooting')-1)*.05,0,.95)){const vx=tx-ball.x,vy=GL-ball.y;blk=PK.w.slice().sort((a,b)=>Math.abs((a.x-ball.x)*vy-(a.y-ball.y)*vx)-Math.abs((b.x-ball.x)*vy-(b.y-ball.y)*vx))[0]}}
  else if(!curl)for(const p of P)if(p.t==1&&p.i&&p.y>GL&&p.y<car.y){const vx=tx-car.x,vy=GL-car.y,u=cl(((p.x-car.x)*vx+(p.y-car.y)*vy)/(vx*vx+vy*vy),0,1);
   if(Math.hypot(p.x-(car.x+u*vx),p.y-(car.y+u*vy))<4&&R()<.55){blk=p;break}}
  if(blk){res='BLOCKED';/* 프리킥: 슈팅선이 벽을 지나는 지점(몸 폭 안으로 제한)으로 맞은 부위가 정해지고 굴절 */const wx=FK?cl(ball.x+(tx-ball.x)*(ball.y-blk.y)/(ball.y-GL),blk.x-2.8,blk.x+2.8):0;df=FK?deflect(blk,ball.x,ball.y,wx-ball.x,blk.y-ball.y,spd):deflect(blk,ball.x,ball.y,tx-ball.x,GL-ball.y,spd);if(FK)df.fk=1;ex_=df.x;ey_=df.y}else if(Math.abs(tx-CX)>GW)res='WIDE';
- else{const sv=cl((curl?.6:.5)-Math.abs(tx-CX)/GW*.5+Math.min(.4,Math.max(0,d0-25)/90*.4)-(stat(car,'shooting')-12)/20*.2+(stat(P[11],'gk')-12)/20*.35+.05+(FK?.06*Math.abs(car.x-CX)/d0+.15:car.y>38||Math.abs(car.x-CX)>40?.12:0),.05,.92)/* 페널티 박스 밖 슈팅(프리킥 제외)은 선방 확률 +12%p */;res=R()<sv?'SAVED':'GOAL';if(res=='SAVED')ey_=GL+3}
+ else{const sv=cl((curl?.6:.5)-Math.abs(tx-CX)/GW*.5+Math.min(.4,Math.max(0,d0-25)/90*.4)-(stat(car,'shooting')-12)/20*.2+(stat(P[11],'gk')-12)/20*.35+.05+(FK?.06*Math.abs(car.x-CX)/d0+.15:car.y>38||Math.abs(car.x-CX)>40?.12:0),.05,.92)/* 페널티 박스 밖 슈팅(프리킥 제외)은 선방 확률 +12%p */;res=(ON?mpZ(tx)==ON.dz:R()<sv)?'SAVED':'GOAL';if(res=='SAVED')ey_=GL+3}
  /* 선방 = 키퍼 몸이 공에 실제로 닿을 때만. 공 궤적과 키퍼 이동(VD)을 미리 시뮬레이션해 접촉 여부를 판정: 닿을 수 없는 선방은 실점, 몸에 닿는 슛은 선방 */
  let gy=GL+5,mx1=gx,wt=0,dv=0;
- if(res=='SAVED'||res=='GOAL'){const sim=(ey,x1,fw)=>{const sx=ball.x,sy=ball.y,cx=(sx+ex_)/2+(curl?pl.bx:0),cy=(sy+ey)/2+(curl?pl.by:0),len=Math.max(8,Math.hypot(ex_-sx,ey-sy)),d=Math.hypot(x1-gk.x,gy-gk.y),B=[];let u=0,t=0,tc=0;
+ if(ON){[mx1,dv,wt]=mpDv(gk,res,tx,ex_,ey_,spd)}else if(res=='SAVED'||res=='GOAL'){const sim=(ey,x1,fw)=>{const sx=ball.x,sy=ball.y,cx=(sx+ex_)/2+(curl?pl.bx:0),cy=(sy+ey)/2+(curl?pl.by:0),len=Math.max(8,Math.hypot(ex_-sx,ey-sy)),d=Math.hypot(x1-gk.x,gy-gk.y),B=[];let u=0,t=0,tc=0;
    while(u<1&&t<3){u=Math.min(1,u+.02*spd*(1.35-.7*u)/len);t+=.02;const v=1-u,y=v*v*sy+2*v*u*cy+u*u*ey;B.push([v*v*sx+2*v*u*cx+u*u*ex_,y,t]);if(!tc&&y<=gy-2)tc=t}
    const w=fw?0:Math.max(0,(tc||t)-.07-d/VD),vv=fw==1?Math.min(VD,d/Math.max(.02,(tc||t)-.07)):VD;let mn=1e9,e=1e9;/* 공이 키퍼 높이를 지나는 시각(tc)에 정확히 도착하도록 다이빙 출발을 늦춤(w) */
    for(const[x,y,t]of B){const k=d>.01?Math.min(d,vv*Math.max(0,t-.05-w))/d:0;e=Math.hypot(gk.x+(x1-gk.x)*k-x,gk.y+(gy-gk.y)*k-2-y);if(y>=GL)mn=Math.min(mn,e)}return[mn,e,w,vv]};
@@ -589,16 +601,16 @@ function commit(){const pl=plan();if(!pl){hint(mode=='shoot'?'위쪽 골대 방�
    if(mx1==null){ex_=ex0;const z=sim(GL+3,gx);if(z[1]<=RC*.9){res='SAVED';ey_=GL+3;wt=z[2]}else{mx1=cl(gk.x+s0*3,8,W-8);wt=sim(GL-3,mx1)[2]}}}}
  if(FK)PK.w.forEach(p=>p.jt=Date.now());/* 수비벽 점프 */
  S='EXEC';ex={k:'shot'};fly(ex_,ey_,spd,{shot:1,vis:1,team:0,tx,gk,bx:curl?pl.bx:0,by:curl?pl.by:0,land:()=>{if(FK)fkEnd();shotEnd(res,sh0,blk,df)}});
- if(res=='SAVED')gkDive(gk,gx,gy,0,wt);else if(res=='GOAL')gkDive(gk,mx1,gy,dv,wt)/* 실점 장면도 공 쪽으로 다이빙하지만 닿지 못하고 놓침 */
+ if(ON){if(res!='BLOCKED')gkDive(gk,mx1,gy,dv,wt);ON.dz=null}else if(res=='SAVED')gkDive(gk,gx,gy,0,wt);else if(res=='GOAL')gkDive(gk,mx1,gy,dv,wt)/* 실점 장면도 공 쪽으로 다이빙하지만 닿지 못하고 놓침 */
  ui()}
 function hint(t){$('hint').textContent=WIDE&&typeof t=='string'?t.replace(/아래 패드/g,'오른쪽 패드'):t}
 const aimCol=()=>{const d={drib:['bd','#a50044'],pass:['bp','#004d98'],shoot:['bs','#f2c200']}[mode]||['bs','#ffe14d'];try{return getComputedStyle($(d[0])).backgroundColor||d[1]}catch(_){return d[1]}};/* 드래그 안내(글자·테두리) = 해당 조작 버튼의 색 */
-function ui(){navLock();$('ch').hidden=S!='DECISION';$('aim').hidden=S!='AIM';$('end').hidden=S!='END';$('hud').hidden=$('ctl').hidden=tab!='match'||S=='END';$('pks').hidden=S!='PKS';$('sk').hidden=S=='END'||!!SO;$('so').hidden=!SO;pad.hidden=!!SO;$('bk').hidden=!!PK;if(S=='END')endRt();pad.classList.toggle('on',S=='AIM');if(S=='AIM')AC=aimCol();pad.style.borderColor=S=='AIM'?AC:'';
- hint(SO?'승부차기 진행 중':PK?(n=>({PKM:n+' 획득! · 경기 정지',PKS:n+' 키커를 선택하세요 · 경기 정지',FKM:n+' · 키커가 이동 중',FKR:n+' · 슛 준비 중',AIM:n+' · 아래 패드를 드래그 · 곧게=강슛 / 휘게=감아차기',EXEC:n+' 진행 중'}[S]||''))(PK.z!=null?'프리킥':'PK'):S=='DECISION'?'경기 정지 · 행동을 고르세요':S=='AIM'?{drib:'아래 패드를 드래그 · 방향과 거리만큼 이동',pass:'아래 패드를 드래그 · 길수록 멀리, 세게 · 휘게 그리면 곡선 패스',shoot:'아래 패드를 드래그 · 골대 쪽으로, 곧게=강슛 / 휘게=감아차기'}[mode]:S=='END'?'':'자동 진행 중 · 고속 재생')}
+function ui(){navLock();$('ch').hidden=S!='DECISION';$('aim').hidden=S!='AIM';$('end').hidden=S!='END';$('hud').hidden=$('ctl').hidden=tab!='match'||S=='END';$('pks').hidden=S!='PKS';$('sk').hidden=S=='END'||!!SO;$('dvr').hidden=!(ON&&ON.ask);if(!ON||!ON.lv)$('sk').textContent=ON?'나가기':'경기 건너뛰기';$('so').hidden=!SO;pad.hidden=!!SO;$('bk').hidden=!!PK;if(S=='END')endRt();pad.classList.toggle('on',S=='AIM');if(S=='AIM')AC=aimCol();pad.style.borderColor=S=='AIM'?AC:'';
+ hint(ON&&mpHint()||(SO?'승부차기 진행 중':PK?(n=>({PKM:n+' 획득! · 경기 정지',PKS:n+' 키커를 선택하세요 · 경기 정지',FKM:n+' · 키커가 이동 중',FKR:n+' · 슛 준비 중',AIM:n+' · 아래 패드를 드래그 · 곧게=강슛 / 휘게=감아차기',EXEC:n+' 진행 중'}[S]||''))(PK.z!=null?'프리킥':'PK'):S=='DECISION'?'경기 정지 · 행동을 고르세요':S=='AIM'?{drib:'아래 패드를 드래그 · 방향과 거리만큼 이동',pass:'아래 패드를 드래그 · 길수록 멀리, 세게 · 휘게 그리면 곡선 패스',shoot:'아래 패드를 드래그 · 골대 쪽으로, 곧게=강슛 / 휘게=감아차기'}[mode]:S=='END'?'':'자동 진행 중 · 고속 재생'))}
 [['bd','drib'],['bp','pass'],['bs','shoot']].forEach(([id,m])=>$(id).onclick=()=>{mode=m;path=[];S='AIM';ui()});
-$('bk').onclick=()=>{if(PK)return;S='DECISION';ui()};$('rs').onclick=()=>showTab('main');
+$('bk').onclick=()=>{if(PK)return;S='DECISION';ui()};$('rs').onclick=()=>{if(ON)mpQuit();showTab('main')};
 const pt=e=>{const r=pad.getBoundingClientRect();return[(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*VH]};
-pad.onpointerdown=e=>{if(S!='AIM')return;drag=true;path=[pt(e)];pad.setPointerCapture(e.pointerId)};
+pad.onpointerdown=e=>{if(ON&&ON.ask)return mpDive(Math.min(2,Math.floor(pt(e)[0]/(W/3))));if(S!='AIM')return;drag=true;path=[pt(e)];pad.setPointerCapture(e.pointerId)};
 pad.onpointermove=e=>{if(drag)path.push(pt(e))};
 pad.onpointerup=e=>{if(!drag)return;drag=false;path.push(pt(e));commit()};
 const sn=v=>Math.round(v*Z)/Z;
@@ -624,17 +636,19 @@ function draw(){g.setTransform(Z,0,0,Z,0,-Math.round(cam*Z));g.imageSmoothingEna
  const bx=sn(ball.x)-1,by=sn(ball.y)-1,kk=fl||lo&&Math.hypot(lo.vx,lo.vy)>6;
  const ph=kk?((Math.floor(Date.now()/(fl&&fl.shot?40:60))*(fl&&fl.ex<fl.sx?-1:1))%4+4)%4:1,o=[[0,0],[1,0],[1,1],[0,1]][ph];/* 공은 항상 2x2, 무늬 한 점이 있고 찬 공은 그 점이 빙글빙글 돈다 */
  g.fillStyle='rgba(0,0,0,.35)';g.fillRect(bx,by+2,2,1);g.fillStyle='#fff';g.fillRect(bx,by,2,2);g.fillStyle='#2b2b2b';g.fillRect(bx+o[0],by+o[1],1,1)
+ const vw=ON&&S=='VIEW',rs=vw?ON.rs:S,dg=S=='DANG'||vw&&/^(DECISION|AIM|WAITK)$/.test(rs);/* vw: 온라인에서 상대 기기가 진행 중인 경기를 받아 보는 중, dg: 위기(상대 공격 찬스) */
+ if(ON&&(S=='AIM'&&mode=='shoot'||S=='WAITK'||vw&&dg)){g.fillStyle='#ffe14d';g.fillRect(CX-5,vw?H-6:1,1,5);g.fillRect(CX+4,vw?H-6:1,1,5)}/* 온라인: 골문 3등분(키퍼 다이빙 구역) 표시 */
  aimDraw(g);g.setTransform(Z,0,0,Z,0,0);
- const tx=PK?'':S=='DECISION'||S=='AIM'?'ATTACK CHANCE!':S=='DANG'?'DANGER!':S=='MSG'?msg:'';
- if(tx&&(S=='MSG'||S=='AIM'||Math.floor(Date.now()/350)%2)){g.font='8px "Press Start 2P",monospace';g.textAlign='center';g.fillStyle='#000';g.fillText(tx,CX+1,11);g.fillStyle=S=='DANG'?'#ff5a4d':'#ffe14d';g.fillText(tx,CX,10)}
+ const tx=PK?'':vw?(dg?'DEFEND!':rs=='MSG'?ON.rm:''):S=='DECISION'||S=='AIM'?'ATTACK CHANCE!':S=='WAITK'?'SHOOT!':S=='DANG'?'DANGER!':S=='MSG'?msg:'';
+ if(tx&&(rs=='MSG'||S=='AIM'||Math.floor(Date.now()/350)%2)){g.font='8px "Press Start 2P",monospace';g.textAlign='center';g.fillStyle='#000';g.fillText(tx,CX+1,11);g.fillStyle=dg?'#ff5a4d':'#ffe14d';g.fillText(tx,CX,10)}
  pg.setTransform(pad.width/W,0,0,pad.width/W,0,0);pg.imageSmoothingEnabled=false;pg.fillStyle='#161d29';pg.fillRect(0,0,W,VH);pg.fillStyle='#243044';
  for(let y=10;y<VH;y+=10)for(let x=10;x<W;x+=10)pg.fillRect(x,y,1,1);
- if(S=='AIM'&&path.length){pg.strokeStyle='#ffe14d';pg.lineWidth=1;pg.beginPath();path.forEach((q,i)=>i?pg.lineTo(q[0],q[1]):pg.moveTo(q[0],q[1]));pg.stroke();const q=path[path.length-1];pg.fillStyle='#ffe14d';pg.fillRect(Math.round(q[0])-2,Math.round(q[1])-2,5,5)}
- else{pg.font='6px "Press Start 2P",monospace';pg.textAlign='center';pg.fillStyle=S=='AIM'?AC:'#566178';pg.fillText(S=='AIM'?'DRAG HERE':S=='DECISION'?'CHOOSE ACTION':PK?PK.z!=null?'FREE KICK':'PENALTY KICK':'FAST FORWARD >>',CX,VH/2+3)}}
+ if(ON&&ON.ask)mpPad();else if(S=='AIM'&&path.length){pg.strokeStyle='#ffe14d';pg.lineWidth=1;pg.beginPath();path.forEach((q,i)=>i?pg.lineTo(q[0],q[1]):pg.moveTo(q[0],q[1]));pg.stroke();const q=path[path.length-1];pg.fillStyle='#ffe14d';pg.fillRect(Math.round(q[0])-2,Math.round(q[1])-2,5,5)}
+ else{pg.font='6px "Press Start 2P",monospace';pg.textAlign='center';pg.fillStyle=S=='AIM'?AC:'#566178';pg.fillText(S=='AIM'?'DRAG HERE':S=='DECISION'?'CHOOSE ACTION':PK?PK.z!=null?'FREE KICK':'PENALTY KICK':S=='WAITK'?'KEEPER...':vw&&dg?'DEFEND!':'FAST FORWARD >>',CX,VH/2+3)}}
 let lt=performance.now(),camT=0;
-function loop(t){if(tab!='match'){lt=t;requestAnimationFrame(loop);return}const dt=Math.min(.05,(t-lt)/1000);lt=t;if(S=='AUTO'||S=='RESUME'){let rem=dt*(WS>0?1:FF);while(rem>0){const h=Math.min(.025,rem);rem-=h;step(h);if(S!='AUTO'&&S!='RESUME')break}}else step(dt);
- const raw=S=='DECISION'||S=='AIM'?0:cl(ball.y-VH*.55,0,H-VH),f=S=='AIM';
- const fs=S=='AUTO'||S=='RESUME';camT+=(raw-camT)*Math.min(1,dt*(f?30:fs?20:3.5));cam+=(camT-cam)*Math.min(1,dt*(f?30:fs?25:7));draw();
+function loop(t){if(tab!='match'){lt=t;requestAnimationFrame(loop);return}const dt=Math.min(.05,(t-lt)/1000);lt=t;if(ON)mpTick();if(S=='AUTO'||S=='RESUME'){let rem=dt*(WS>0?1:FF);while(rem>0){const h=Math.min(.025,rem);rem-=h;step(h);if(S!='AUTO'&&S!='RESUME')break}}else step(dt);
+ const vw=ON&&S=='VIEW',raw=vw?(/^(DECISION|AIM|WAITK)$/.test(ON.rs)?H-VH:cl(ball.y-VH*.45,0,H-VH)):S=='DECISION'||S=='AIM'||S=='WAITK'?0:cl(ball.y-VH*.55,0,H-VH),f=S=='AIM';
+ const fs=S=='AUTO'||S=='RESUME'||vw&&/^(AUTO|RESUME)$/.test(ON.rs);camT+=(raw-camT)*Math.min(1,dt*(f?30:fs?20:3.5));cam+=(camT-cam)*Math.min(1,dt*(f?30:fs?25:7));draw();if(ON&&ON.auth&&S!='END')mpSnap();
  const a=score[0]+' - '+score[1],b=clock>=90?mt(clock):Math.floor(clock)+"'",xs=XT>0&&!ET?'추가 +'+XT+'분':'';if($('sc').textContent!=a)$('sc').textContent=a;if($('tm').textContent!=b)$('tm').textContent=b;if($('xt').textContent!=xs){$('xt').textContent=xs;$('xt').hidden=!xs}requestAnimationFrame(loop)}
 /* ===== 메인 탭 · 선수 데이터 ===== */
 const LG={EPL:'프리미어리그',BUN:'분데스리가',LAL:'라리가',SA:'세리에 A',L1:'리그 1'},GRP=['GK','DF','MF','FW'];
@@ -822,7 +836,7 @@ $('m_in').addEventListener('keydown',e=>{if(e.isComposing||e.keyCode==229)return
 $('m_ok').onclick=tnSave;$('m_no').onclick=tnClose;tnApply();
 $('t_main').onclick=()=>showTab('main');$('t_lg').onclick=()=>showTab('league');$('t_cl').onclick=()=>showTab('cl');$('m_go').onclick=startMatch;
 [['m_l','lineup'],['m_m','market'],['m_s','squad']].forEach(([id,v])=>$(id).onclick=()=>{view=v;render()});
-let toastT=0;function toast(t,ms,c){const e=$('toast');if(!e)return;/* 스크립트 로드 중 복구(applyM)에서는 토스트 요소가 아직 없음 */e.textContent=t;e.className=(c?c+' ':'')+'on';clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),ms||1500)}
+let toastT=0;function toast(t,ms,c){const e=$('toast');if(!e)return;/* 스크립트 로드 중 복구(applyM)에서는 토스트 요소가 아직 없음 */e.textContent=t;e.className=(c?c+' ':'')+'on';clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),ms||1500);if(ON&&ON.auth&&ON.live)mpTx({t:'toast',x:t,ms,c})}
 let nt=0;$('m_new').onclick=()=>{const b=$('m_new');if(!nt){b.textContent='정말 새로 시작? 한 번 더';nt=setTimeout(()=>{nt=0;b.textContent='새 게임'},3000)}else{clearTimeout(nt);nt=0;b.textContent='새 게임';newGame();SCH=genSched();sto(K4,SCH);clrM();clrR();MR=null;CM=null;started=false;clMake();showTab('main')}};
 $('main').addEventListener('click',e=>{const t=e.target.closest('[data-sell],[data-sg],[data-sw],[data-sel],[data-more],[data-act]');if(!t)return;const d=t.dataset,aid=view=='market'?(d.sel||d.sg||SEL.market):null,rowOf=id=>id&&$('pane').querySelectorAll?[...$('pane').querySelectorAll('.row2')].find(r=>r.dataset.sel==id):null,a0=rowOf(aid),y0=a0?a0.getBoundingClientRect().top:0;if(d.act){d.act=='edit'?srchModal():mdOpen(formHtml(null,'add'));return}
  if(d.sell){const q=DB.get(d.sell),k=SV.squad.indexOf(d.sell);if(q&&k>=0&&!SV.xi.includes(d.sell)){const v=sellP(q);SV.squad.splice(k,1);SCH.asset=mny(SCH.asset+v);sto(K1,SV);sto(K4,SCH);for(const z in SEL)if(SEL[z]==d.sell)SEL[z]=null;toast('판매했습니다! +'+v)}}
@@ -921,7 +935,7 @@ function skipSim(){if(!started||S=='END'||S=='SO'||MR==null&&!CM||P.length!=22)r
  if(ET||etNeed()){/* 챔피언스리그 연장전(30분): 합산·단판이 동점이면 남은 연장 시간 몫의 득점을 더함 */const fe=ET?cl((ETS+30-clock)/90,0,.34):.3;if(!ET){ETS=90+Math.max(0,XT);ET=2}const c0=Math.max(ETS,clock),e=lam.map(l=>poi(l*fe));
   [0,1].forEach(t=>{const pl=P.filter(p=>p.t==t);for(let n=0;n<e[t];n++){const x=wp(pl,p=>stPw.g[p.g]*Math.pow(Math.max(4,stat(p,'ovr'))/12,2.2));if(x){x.s.g++;x.s.sh++;x.s.sot++;GLG.push({t,n:pn(x),c:c0+R()*(ETS+30-c0)})}}score[t]+=e[t]})}
  PK=null;pkD=1;pkT=-1;FQ=[];$('toast').classList.remove('on');fullTime(1)}
-$('sk').onclick=skipSim;
+$('sk').onclick=()=>ON?mpLeave():skipSim();
 /* 순위 행: 같은 선수는 팀 이동 여부와 관계없이 합산(소속 팀 = 가장 최근 출전 팀). 기록 높은 순, 같은 기록은 공동 순위(1,2,2,4…) */
 function stRows(k){const M=new Map(),st=stInit();
  for(const o of[st.my,st.ot])for(const id in o){const e=o[id],x=M.get(id);if(!x)M.set(id,{n:e.n,t:e.t,g:e.g,a:e.a,m:e.m,s:e.s,l:e.l});else{x.g+=e.g;x.a+=e.a;x.m+=e.m;x.s=q1(x.s+e.s);if(e.l>=x.l){x.n=e.n;x.t=e.t;x.l=e.l}}}
@@ -1154,6 +1168,128 @@ function clRender(){['g','k','s','t'].forEach(v=>$('cv_'+v).classList.toggle('on
  $('cl_c').innerHTML={g:clGV,k:clKV,s:clSV,t:clTV}[CV]()}
 $('cl_b').addEventListener('click',e=>{const b=e.target.closest('[data-cv]');if(b){CV=b.dataset.cv;clRender()}});
 let CL=ld(K6);if(!okCL(CL))clMake();else clAdv();
+/* ===== 온라인 맞짱 (1:1 온라인 대전) =====
+   메인 화면 맨 아래 [온라인 맞짱] → 코드 입력 → 같은 코드를 넣은 두 사람이 각자의 선발 11명으로 대결. 리그·챔스·성장·저장에는 아무 영향도 주지 않는 친선전.
+   연결: PeerJS(WebRTC 데이터 채널, 필요할 때만 CDN 에서 불러옴). 코드로 만든 방 ID 를 먼저 차지한 쪽이 방장(host), 이미 있으면 그 방에 접속(guest).
+   진행: 한 번에 한 기기만 경기 엔진을 돌리고(진행 기기, ON.auth) 다른 기기는 그 장면을 20Hz 스냅숏으로 받아 180도 돌려 그리기만 함(관전 기기, S='VIEW').
+        → 어느 기기에서든 '내 팀 = 팀 0(빨강, 위쪽 골대로 공격)' 이라 엔진·조작 코드는 원본 그대로 쓴다. 선수 번호는 (n+11)%22, 좌표는 (W-x, H-y) 로 서로 대응.
+   공격 찬스: 팀마다 전반 3 · 후반 3 번(mpPlan, 두 팀이 번갈아). 진행 기기의 내 차례면 원본 조종 상황(DECISION) 그대로,
+        상대 차례면 그 순간의 경기 상태를 통째로 넘겨(mpHand → mpTake) 상대 기기가 진행 기기가 되어 원본과 똑같이 조종한다. 예정된 찬스가 남아 있으면 전·후반 종료를 미룸(mpHold).
+   슛: 공격자가 조준을 끝내면 경기를 멈추고(S='WAITK') 수비자에게 물어봄 → 수비자가 3초 안에 왼쪽/가운데/오른쪽 선택(시간 초과 = 가운데).
+        골문을 3등분해 슛이 향한 구역과 키퍼가 고른 구역이 같으면 선방, 다르면 골. 수비수 몸에 맞음(BLOCKED)·골대 밖(WIDE)은 원본 판정 그대로. PK·프리킥·연장전은 온라인에서 없음.
+   메시지: hi(팀 이름·선발) / go(시작) / s(스냅숏) / hand(진행 넘김) / shot(다이빙 요청) / dive(선택) / toast / end(최종 기록) / bye(나감) / p(생존 확인) / full(방이 참) ===== */
+const MPV=1,MPK='fsq_mpcode',MPU=['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
+let MPL=null;/* 연결(로비~경기 끝): {code,peer,conn,host,hi:{n,ln}(상대 팀),ok,up,dead,t,rx(마지막 수신 시각)} */
+const mpF=n=>(n+11)%22,mpZ=x=>x<CX-GW/3?0:x>CX+GW/3?2:1,mpSt=t=>{$('mp_st').textContent=t},mpBusy=b=>{$('mp_in').disabled=$('mp_ok').disabled=!!b};
+const mpCode=v=>String(v||'').normalize('NFC').toLowerCase().replace(/[^0-9a-z가-힣]/g,'').slice(0,12),mpId=c=>'mfmm-v'+MPV+'-'+[...c].map(ch=>ch.codePointAt(0).toString(36)).join('-');
+const mpOpt=()=>Object.assign({debug:0},window.MP_PEER||{});/* window.MP_PEER: 직접 띄운 PeerServer 를 쓸 때의 접속 옵션(없으면 PeerJS 공용 서버) */
+const mpErr=e=>{const t=e&&e.type;return t=='browser-incompatible'?'이 브라우저는 온라인 대전을 지원하지 않습니다.':/network|server-error|socket/.test(t||'')?'대전 서버에 연결하지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요.':'연결 오류'+(t?' ('+t+')':'')};
+function mpLib(){return new Promise((ok,no)=>{if(window.Peer)return ok();let i=0;const nx=()=>{if(i>=MPU.length)return no();const s=document.createElement('script');s.src=MPU[i++];s.onload=()=>window.Peer?ok():nx();s.onerror=nx;document.head.appendChild(s)};nx()})}
+function mpTx(m){const L=MPL;if(L&&L.conn&&L.conn.open)try{L.conn.send(m)}catch(e){}}
+function mpShut(ms){const L=MPL;MPL=null;if(!L)return;L.dead=1;clearTimeout(L.t);const k=()=>{try{L.peer&&L.peer.destroy()}catch(e){}};ms?setTimeout(k,ms):k()}
+/* ----- 로비(코드 입력 팝업) ----- */
+function mpOpen(){if(started&&S!='END'||ON)return;$('mp').hidden=false;if(!MPL){$('mp_in').value=mpCode(ld(MPK));mpBusy(0);mpSt('');$('mp_in').focus()}}
+function mpCancel(){mpShut();mpBusy(0);mpSt('');$('mp').hidden=true}
+function mpFail(t){mpShut();mpBusy(0);mpSt(t)}
+function mpJoin(){const code=mpCode($('mp_in').value);$('mp_in').value=code;if(!code){mpSt('코드를 입력하세요 (한글·영문·숫자, 최대 12자)');return}if(MPL||ON)return;sto(MPK,code);mpBusy(1);mpSt('연결 중…');const L=MPL={code,rx:0};
+ mpLib().then(()=>{if(MPL===L)mpHost(L)},()=>{if(MPL===L)mpFail('온라인 모듈을 불러오지 못했습니다. 인터넷 연결을 확인하세요.')})}
+function mpHost(L){let p;try{p=L.peer=new Peer(mpId(L.code),mpOpt())}catch(e){return mpFail(mpErr(e))}L.host=true;
+ L.t=setTimeout(()=>{if(MPL===L&&!L.up)mpFail('대전 서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.')},15000);
+ p.on('open',()=>{if(L.dead||L.peer!==p)return;L.up=1;mpSt('방을 만들었습니다 · 코드 "'+L.code+'" · 같은 코드를 입력한 상대를 기다리는 중…')});
+ p.on('connection',c=>{if(L.dead||L.conn){c.on('open',()=>{try{c.send({t:'full'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},500)});return}L.conn=c;mpWire(L,c)});
+ p.on('disconnected',()=>{if(!L.dead&&L.peer===p&&!p.destroyed)try{p.reconnect()}catch(e){}});
+ p.on('error',e=>{if(L.dead||L.peer!==p||ON)return;if(e.type=='unavailable-id'){clearTimeout(L.t);try{p.destroy()}catch(_){}mpGuest(L)}else if(!L.conn)mpFail(mpErr(e))})}
+function mpGuest(L){let p;try{p=L.peer=new Peer(mpOpt())}catch(e){return mpFail(mpErr(e))}L.host=false;mpSt('방을 찾았습니다 · 접속 중…');
+ L.t=setTimeout(()=>{if(MPL===L&&!ON)mpFail('방에 접속하지 못했습니다. 잠시 후 다시 입장해 보세요.')},15000);
+ p.on('open',()=>{if(L.dead||L.peer!==p)return;const c=L.conn=p.connect(mpId(L.code),{reliable:true,serialization:'json'});mpWire(L,c)});
+ p.on('error',e=>{if(L.dead||L.peer!==p||ON)return;mpFail(e.type=='peer-unavailable'?'방이 방금 닫혔습니다. 다시 입장해 보세요.':mpErr(e))})}
+function mpWire(L,c){const hi=()=>{if(L.dead||L.conn!==c||L.ok)return;L.ok=1;L.rx=performance.now();mpTx({t:'hi',v:MPV,n:TN,ln:mpMine()})};
+ c.on('open',hi);if(c.open)hi();
+ c.on('data',d=>{if(L.dead||L.conn!==c)return;try{mpRx(L,d)}catch(e){console.error(e)}});
+ c.on('close',()=>{if(!L.dead&&L.conn===c)mpLost(L)});c.on('error',()=>{})}
+function mpLost(L){if(ON){if(S!='END')mpAbort('상대방과의 연결이 끊겼습니다');return}
+ if(L.host){L.conn=null;L.ok=0;L.hi=null;mpSt('상대가 나갔습니다 · 코드 "'+L.code+'" · 다시 기다리는 중…')}else mpFail('연결이 끊겼습니다. 다시 입장해 보세요.')}
+/* 선발 11명 주고받기: [포메이션 칸 c, 가로 위치 x, [이름, 포지션, 세부 포지션, 능력치(SK 순서)]] */
+const mpMine=()=>lineT0().map(e=>[e.c,q2(e.x),e.ref?[e.ref.name,e.ref.pos,e.ref.sub||'',SK.map(k=>e.ref.a&&Number.isFinite(e.ref.a[k])?e.ref.a[k]:0)]:0]);
+function mpTheirs(a){if(!Array.isArray(a)||a.length!=11)return null;const out=[];
+ for(let k=0;k<11;k++){const e=a[k];if(!Array.isArray(e))return null;const c=e[0],x=e[1],r=e[2];if(!Number.isInteger(c)||c<0||c>10||(k==0)!=(c==0)||!(x>=0&&x<=1))return null;let ref;
+  if(Array.isArray(r)){const st={};SK.forEach((key,j)=>{const v=Array.isArray(r[3])?r[3][j]:0;if(Number.isFinite(v)&&v>0)st[key]=cl(Math.round(v),1,20)});ref={name:String(r[0]||'?').slice(0,40),pos:GRP.includes(r[1])?r[1]:GOF(c),sub:String(r[2]||'').slice(0,4),a:st}}
+  out.push({c,x,d:FORM[c][1],g:GOF(c),ref})}return out}
+/* ----- 수신 ----- */
+function mpRx(L,d){if(!d||typeof d!='object')return;L.rx=performance.now();const t=d.t;
+ if(t=='full')return mpFail('이미 두 사람이 경기 중인 방입니다. 다른 코드를 써 보세요.');
+ if(t=='hi'){if(ON||L.hi)return;if(d.v!==MPV)return mpFail('상대와 게임 버전이 달라 대전할 수 없습니다.');const ln=mpTheirs(d.ln);if(!ln)return mpFail('상대 팀 정보를 읽지 못했습니다.');L.hi={n:tnClean(d.n)||'상대 팀',ln};if(L.host){mpTx({t:'go'});mpBegin(L,true)}return}
+ if(t=='go'){if(!ON&&L.hi&&!L.host)mpBegin(L,false);return}
+ if(t=='bye'){if(ON&&S!='END')mpAbort('상대방이 경기에서 나갔습니다');return}
+ if(!ON)return;
+ if(t=='s'){if(!ON.auth)mpSee(d)}
+ else if(t=='hand'){if(!ON.auth)mpTake(d.st)}
+ else if(t=='shot'){if(!ON.auth&&S=='VIEW'){ON.ask={u:performance.now()+3000};ON.pick=null;ui()}}
+ else if(t=='dive'){if(ON.auth&&S=='WAITK')mpShoot(2-cl(d.z|0,0,2))}/* 수비자 화면은 180도 돌아가 있으므로 좌우가 반대 */
+ else if(t=='toast'){if(!ON.auth)toast(String(d.x||'').slice(0,40),+d.ms||0,d.c=='pk'?'pk':'')}
+ else if(t=='end'){if(!ON.auth)mpOver(d.st)}}
+/* ----- 경기 시작 · 종료 ----- */
+function mpPlan(){const q=[[],[]],f=R()<.5?0:1;for(const[h,s]of[[0,f],[45,1-f]])for(let j=0;j<6;j++)q[(j+s)%2].push(h+2.5+6.6*j+R()*3);return q}/* 전·후반 각각 6칸을 두 팀이 번갈아(후반은 순서 반대) → 팀당 3 + 3 */
+function mpBegin(L,auth){clearTimeout(L.t);$('mp').hidden=true;mpBusy(0);mpSt('');const nm=L.hi.n;
+ ON={host:L.host,auth,live:0,dq1:[],dn1:0,dz:null,sp:null,wt:0,ask:null,pick:null,rs:'MSG',rm:'KICK OFF',s0:null,s1:null,t1:0,ls:0,lS:'',lv:0,stale:0};
+ CM=null;MR=null;clrR();WS=0;OPP=[nm,nm,nm.slice(0,10)];$('oc').textContent=OPP[2];P=[];
+ [lineT0(),L.hi.ln].forEach((Ln,t)=>Ln.forEach((e,k)=>P.push({t,i:e.c,k,n:t*11+k,x:0,y:0,bx:e.x,bd:e.d,ref:e.ref,g:e.g,tk:0,st:0,vx:0,vy:0,dx:0,dy:t?1:-1,s:mkS()})));
+ clock=0;score=[0,0];pasF=lastP=lastE=lastB=null;cd=2;dcd=1e9;PK=null;pkD=1;pkT=-1;FQ=[];HF=0;XT=-1;ET=0;ETS=-1;SO=null;SOR=null;GLG=[];DQ=[];DN=0;XDC=0;cam=camT=0;path=[];drag=false;started=true;
+ if(auth){const q=mpPlan();DQ=q[0];ON.dq1=q[1];kick(0,'KICK OFF')}else{kick(1,'KICK OFF');S='VIEW'}/* 방장 팀의 킥오프로 시작(방장 기기가 먼저 진행) */
+ showTab('match');ui();toast('온라인 맞짱 · vs '+nm,1800);ON.live=1}
+function mpQuit(){if(!ON)return;clearTimeout(ON.lv);mpTx({t:'bye'});mpShut(400);ON=null;started=false;$('toast').classList.remove('on');init()}/* 연결을 닫고 평소(경기 전) 상태로 */
+function mpAbort(t){mpQuit();showTab('main');toast(t,2600)}
+function mpLeave(){const b=$('sk');if(!ON.lv){b.textContent='정말 나가기?';ON.lv=setTimeout(()=>{if(ON){ON.lv=0;b.textContent='나가기'}},3000)}else mpAbort('온라인 맞짱에서 나왔습니다')}
+function mpFin(){mpTx({t:'end',st:mpPack()})}
+function mpOver(st){if(!mpLoad(st))return mpAbort('동기화 오류로 경기를 종료했습니다');car=null;ON.ask=null;S='END';$('toast').classList.remove('on');finRate();$('er').innerHTML=erHTML(score[0],score[1],{lb:'온라인 맞짱'});ui()}
+/* ----- 공격 찬스 일정 · 진행 넘기기 ----- */
+function mpChk(){const q=ON.dq1,n=ON.dn1;if(n<q.length&&H-car.y<dLd(clock-q[n],2)){ON.dn1++;return 1}return 0}/* 상대 팀 차례(내 dChk 를 뒤집은 것) */
+function mpHold(){const pd=l=>DN<DQ.length&&DQ[DN]<l||ON.dn1<ON.dq1.length&&ON.dq1[ON.dn1]<l;if(!HF){if(clock>=45&&pd(45))clock=44.99}else if(XT>=0&&clock>=90+XT&&pd(1e9))clock=90+XT-.01}
+function mpPack(){return{c:q2(clock),sc:score,hf:HF,xt:XT,pt:ptm,lt:lT,cp:[cp.t,q2(cp.tm)],car:car?car.n:-1,b:[q2(ball.x),q2(ball.y)],P:P.map(p=>[p.x,p.y,p.vx,p.vy,p.dx,p.dy,Math.min(p.st,9)].map(q2)),ms:P.map(p=>MK.map(k=>p.s[k])),
+ gl:GLG.map(e=>[e.t,e.n,q2(e.c)]),dq:DQ.map(q2),dn:DN,dq1:ON.dq1.map(q2),dn1:ON.dn1,lp:lastP&&lastP.p&&lastP.r?[lastP.p.n,lastP.r.n,lastP.t,q2(lastP.c)]:0,lb:lastB?lastB.n:-1}}
+function mpLoad(m){const fin=a=>Array.isArray(a)&&a.every(Number.isFinite),pl=n=>Number.isInteger(n)&&n>=0&&n<22?P[mpF(n)]:null;
+ if(!m||!Array.isArray(m.P)||m.P.length!=22||!m.P.every(a=>fin(a)&&a.length==7)||!fin(m.sc)||m.sc.length!=2||!fin(m.b)||m.b.length!=2||!Number.isFinite(m.c)||!Array.isArray(m.ms)||m.ms.length!=22)return 0;
+ m.P.forEach((a,i)=>{const p=P[mpF(i)],q=m.ms[i]||[];p.x=W-a[0];p.y=H-a[1];p.vx=-a[2];p.vy=-a[3];p.dx=-a[4];p.dy=-a[5];p.st=a[6];p.tk=0;MK.forEach((k,j)=>{p.s[k]=Number.isInteger(q[j])&&q[j]>=0?q[j]:0})});
+ clock=m.c;score=[m.sc[1],m.sc[0]];HF=m.hf?1:0;XT=Number.isFinite(m.xt)?m.xt:-1;ptm=m.pt?0:1;lT=m.lt?0:1;cp={t:m.cp&&m.cp[0]>=0?1-m.cp[0]:-1,tm:m.cp&&+m.cp[1]||0};ball.x=W-m.b[0];ball.y=H-m.b[1];
+ GLG=(Array.isArray(m.gl)?m.gl:[]).filter(Array.isArray).map(e=>({t:e[0]?0:1,n:String(e[1]).slice(0,60),c:+e[2]||0}));DQ=fin(m.dq1)?m.dq1:[];DN=m.dn1|0;ON.dq1=fin(m.dq)?m.dq:[];ON.dn1=m.dn|0;
+ car=pl(m.car);lastB=pl(m.lb);lastP=Array.isArray(m.lp)&&pl(m.lp[0])&&pl(m.lp[1])?{p:pl(m.lp[0]),r:pl(m.lp[1]),t:m.lp[2]?0:1,c:+m.lp[3]||0}:null;
+ lastE=pasF=OF=nof=fl=lo=ex=DV=pop=dS=null;WS=0;aiT=0;TR[0].u=TR[1].u=-9;TR[0].c=TR[1].c=0;return 1}
+function mpHand(){mpTx({t:'hand',st:mpPack()});ON.auth=false;ON.rs='DECISION';ON.rm='';ON.s0=ON.s1=null;ON.ask=ON.pick=null;S='VIEW';fl=lo=ex=null;ui()}
+function mpTake(st){if(!mpLoad(st)||!car||car.t)return mpAbort('동기화 오류로 경기를 종료했습니다');ON.auth=true;ON.ask=ON.pick=ON.dz=ON.sp=null;ON.lS='';cd=55;path=[];drag=false;toDecision()}
+/* ----- 스냅숏(진행 기기 → 관전 기기): 멈춰 있는 장면은 4Hz, 그 외 20Hz ----- */
+function mpSnap(){const t=performance.now();if(S==ON.lS&&t-ON.ls<(/^(DECISION|AIM|WAITK)$/.test(S)?250:50))return;ON.ls=t;ON.lS=S;const a=[];for(const p of P)a.push(Math.round(p.x*10),Math.round(p.y*10));
+ mpTx({t:'s',S,m:S=='MSG'?msg:'',c:q2(clock),sc:score,xt:XT,hf:HF,p:a,b:[q2(ball.x),q2(ball.y),fl?fl.shot?2:1:lo&&Math.hypot(lo.vx,lo.vy)>6?1:0,fl&&fl.ex<fl.sx?1:0],car:car?car.n:-1,
+  dv:DV?[DV.p.n,q2(DV.e),DV.d==null?9:DV.d,q2(DV.tx)]:0,pop:pop&&Date.now()<pop.u?[pop.p.n,pop.t||'',pop.c||'',pop.u-Date.now()]:0})}
+const mpMsg=m=>m=='GOAL!'?OPP[2]+' GOAL':/ GOAL$/.test(m)?'GOAL!':m=='BALL LOST'?'BALL WON':m.slice(0,24);
+function mpSee(d){if(S!='VIEW'||!Array.isArray(d.p)||d.p.length!=44||!d.p.every(Number.isFinite)||!Array.isArray(d.b)||!Number.isFinite(d.b[0])||!Number.isFinite(d.b[1]))return;
+ const pl=n=>Number.isInteger(n)&&n>=0&&n<22?P[mpF(n)]:null,rs=String(d.S),ch=rs!=ON.rs,v=d.dv,o=d.pop;ON.s0=ON.s1;ON.s1=d;ON.t1=performance.now();ON.rs=rs;ON.rm=rs=='MSG'?mpMsg(String(d.m||'')):'';
+ clock=+d.c||0;if(Array.isArray(d.sc))score=[d.sc[1]|0,d.sc[0]|0];XT=Number.isFinite(d.xt)?d.xt:-1;HF=d.hf?1:0;car=pl(d.car);lo=null;
+ fl=d.b[2]?{shot:d.b[2]==2,ex:d.b[3]?1:0,sx:d.b[3]?0:1}:null;/* 그리기 전용(공 회전 방향) */
+ DV=Array.isArray(v)&&pl(v[0])?{p:pl(v[0]),e:+v[1]||0,d:v[2]==9?null:-v[2],tx:W-v[3],v:0}:null;
+ if(Array.isArray(o)&&pl(o[0]))pop={p:pl(o[0]),u:Date.now()+Math.min(1500,+o[3]||0),t:String(o[1]||'').slice(0,20)||undefined,c:/^#[0-9a-f]{3,6}$/i.test(o[2])?o[2]:undefined};
+ if(!ON.s0)mpPos(1);if(ch)ui()}
+function mpPos(k){const b=ON.s1,a=ON.s0||b;if(!b)return;for(let i=0;i<22;i++){const p=P[mpF(i)],j=2*i;p.x=W-(a.p[j]+(b.p[j]-a.p[j])*k)/10;p.y=H-(a.p[j+1]+(b.p[j+1]-a.p[j+1])*k)/10}
+ ball.x=W-(a.b[0]+(b.b[0]-a.b[0])*k);ball.y=H-(a.b[1]+(b.b[1]-a.b[1])*k)}
+function mpTick(){const n=performance.now();if(S=='VIEW'){mpPos(cl((n-ON.t1)/60,0,1));if(ON.ask&&n>ON.ask.u)mpDive(1)}else if(S=='WAITK'&&n>ON.wt)mpShoot(1)}
+/* ----- 슛 ↔ 키퍼 다이빙 ----- */
+function mpAsk(pl){ON.sp=pl;ON.wt=performance.now()+6000;S='WAITK';mpTx({t:'shot'});ui()}/* 답이 6초 안에 안 오면 가운데로 처리 */
+function mpShoot(z){if(S!='WAITK'||!ON.sp)return;const pl=ON.sp;ON.sp=null;ON.dz=cl(z|0,0,2);S='AIM';commit(pl)}
+function mpDive(z){if(!ON||!ON.ask)return;ON.ask=null;ON.pick=z;mpTx({t:'dive',z});ui()}
+/* 키퍼 다이빙 연출 [목표 x, 속도, 출발 지연]: 선방 = 공이 오는 지점에 공과 동시에 도착, 그 외 = 고른 구역(왼쪽 CX-11 · 가운데 CX · 오른쪽 CX+11)으로 */
+function mpDv(gk,res,tx,ex_,ey_,spd){const gy=GL+5,len=Math.max(8,Math.hypot(ex_-ball.x,ey_-ball.y));let u=0,T=0;while(u<1&&T<3){u=Math.min(1,u+.02*spd*(1.35-.7*u)/len);T+=.02}
+ const dr=Math.abs(tx-gk.x)<2.5?0:Math.sign(tx-gk.x),x1=res=='SAVED'?(dr?tx-dr*3:tx):CX+(ON.dz-1)*11,d=Math.hypot(x1-gk.x,gy-gk.y),v=Math.max(VD,d/Math.max(.04,T-.09));return[x1,v,Math.max(0,T-.07-d/v)]}
+function mpPad(){const k=cl((ON.ask.u-performance.now())/3000,0,1),w=W/3;pg.fillStyle='#3a4a66';pg.fillRect(w,8,1,VH-8);pg.fillRect(2*w,8,1,VH-8);pg.fillStyle='#ffe14d';pg.fillRect(0,0,Math.round(W*k),4);
+ pg.font='6px "Press Start 2P",monospace';pg.textAlign='center';pg.fillText('DIVE WHERE?',CX,26);pg.fillStyle='#fff';['< LEFT','CENTER','RIGHT >'].forEach((s,i)=>pg.fillText(s,w*i+w/2,VH/2+10))}
+function mpHint(){if(S=='WAITK')return'슛! · 상대 키퍼가 다이빙 방향을 고르는 중…';
+ if(S=='VIEW'){if(ON.ask)return'상대의 슛! · 3초 안에 키퍼가 몸을 날릴 방향을 고르세요';if(ON.stale)return'상대 기기의 응답을 기다리는 중…';const r=ON.rs;
+  return r=='DECISION'||r=='AIM'?'상대 공격 찬스 · 상대가 슛하면 키퍼 다이빙 방향을 고릅니다':(r=='WAITK'||r=='EXEC')&&ON.pick!=null?'키퍼 다이빙: '+['왼쪽','가운데','오른쪽'][ON.pick]:r=='EXEC'?'상대 공격 진행 중':'온라인 맞짱 · 자동 진행 중 · 고속 재생'}
+ return S=='AUTO'||S=='RESUME'||S=='MSG'?'온라인 맞짱 · 자동 진행 중 · 고속 재생':''}
+/* 생존 확인: 2초마다 신호를 보내고, 3초 넘게 조용하면 안내, 25초 넘으면 경기 종료 */
+setInterval(()=>{const L=MPL;if(!ON||!L||S=='END')return;mpTx({t:'p'});const q=performance.now()-L.rx;if(q>25000)return mpAbort('상대방의 응답이 없어 경기를 종료했습니다');const st=q>3000?1:0;if(st!=ON.stale){ON.stale=st;ui()}},2000);
+$('m_ol').onclick=mpOpen;$('mp_ok').onclick=mpJoin;$('mp_no').onclick=mpCancel;
+$('mp_in').addEventListener('keydown',e=>{if(e.isComposing||e.keyCode==229)return;if(e.key=='Enter'){e.preventDefault();mpJoin()}});
+$('mp').addEventListener('click',e=>{if(e.target===$('mp')&&!MPL)mpCancel()});
+$('dvr').addEventListener('click',e=>{const b=e.target.closest('[data-dz]');if(b)mpDive(+b.dataset.dz)});
 const RM=ldM();if(RM)applyM(RM);else init();
 setInterval(snapM,300);addEventListener('pagehide',snapM);addEventListener('beforeunload',snapM);addEventListener('visibilitychange',()=>{if(document.hidden)snapM()});
 resize();requestAnimationFrame(loop);showTab(RM?'match':'main');
