@@ -184,7 +184,7 @@ body.wm #nr #m_ol{margin:0}
 <div id="lg" hidden><h2>LEAGUE TABLE</h2><div class="lgb" id="lg_b"><button id="lv_t" data-lv="t">리그 순위</button><button id="lv_g" data-lv="g">득점 순위</button><button id="lv_a" data-lv="a">도움 순위</button><button id="lv_r" data-lv="r">평균평점 순위</button></div><div class="note" id="lg_sub"></div><div class="lgw"><table id="lg_t"></table></div><button class="mini" id="lg_more" hidden>더 보기</button></div>
 <div id="cl" hidden><h2>CHAMPIONS LEAGUE</h2><div class="lgb" id="cl_b"><button id="cv_g" data-cv="g">조별예선</button><button id="cv_k" data-cv="k">토너먼트</button><button id="cv_s" data-cv="s">일정·결과</button><button id="cv_t" data-cv="t">참가팀·기록</button></div><div class="note" id="cl_sub"></div><div id="cl_c"></div></div>
 <script>
-let ON=null;const MPW=/^(DECISION|AIM|WAITK|DMOVE)$/;/* ON: 온라인 맞짱 진행 상태(없으면 null) — 아래 '온라인 맞짱' 블록 참고, MPW: 공격 찬스로 경기가 멈춰 있는 상태 */
+let ON=null;const MPW=/^(DECISION|AIM|WAITK)$/;/* ON: 온라인 맞짱 진행 상태(없으면 null) — 아래 '온라인 맞짱' 블록 참고, MPW: 공격 찬스로 경기가 멈춰 있는 상태 */
 const W=180,H=280,VH=140,GL=6,GB=H-6,GW=14,CX=W/2,PY=27,R=Math.random;/* PY: 페널티 마크 y = 골라인에서 21px = 골문 중앙에서 11m (페널티 박스 깊이 16.5m 가 32px 이므로 2/3 지점) */
 const cv=document.getElementById('c'),g=cv.getContext('2d'),pad=document.getElementById('pad'),pg=pad.getContext('2d');
 let Z=2;const FF=10;let WS=0,DQ=[],DN=0,XDC=0,XDP=.5,AWQ=[];/* 조종 상황(PK·프리킥 제외) 스케줄: DQ=이번 경기 예정 시각(분) — 전반 3·후반 3, 우리 팀 총합 스탯이 상대보다 2 이상 높으면 그중 1번 제외, DN=다음 차례, XDC=추가 시간에 조종 상황 1회 추가(대기 중), XDP=그 확률 */
@@ -319,7 +319,7 @@ function sim(dt){
  if(lo)for(const t of[0,1])ch.push(...P.filter(p=>p.t==t&&p.i&&p.st<=0).sort((a,b)=>dist(a,ball)-dist(b,ball)).slice(0,cp.t==t&&cp.tm>0?3:2));
  for(const p of P){if(p===car)continue;if(!p.i&&DV&&DV.p===p&&DV.v){if(DV.e>=DV.dl)gkGo(p,dt);else p.vx=p.vy=0;continue}if(p.st>0)continue;const a=A[p.t],sp=SPD[p.i]*smul(p,false);
   if(!p.i){const tx=fl&&fl.shot&&fl.gk===p?fl.tx:ball.x,sw=a.inP&&a.b>.5?14:0;mv(p,cl(tx,CX-GW,CX+GW),p.t?GL+5+sw:GB-5-sw,(fl&&fl.shot?32:18)*smul(p,false),dt);continue}
-  if(ON&&ON.cd&&ON.cd.p===p&&S=='EXEC'){mv(p,ON.cd.x,ON.cd.y,38*smul(p,false),dt);continue}/* 온라인: 상대가 직접 조종하는 수비수 */
+  if(ON&&ON.cd&&ON.cd.p===p&&S=='EXEC'){mpRun(p,dt);continue}/* 온라인: 상대가 직접 조종하는 수비수 */
   if(ch.includes(p)){mv(p,ball.x,ball.y,sp*1.1,dt);continue}
   if(fl&&fl.rcv===p){mv(p,fl.ex,fl.ey,sp*1.5,dt);continue}
   if(fl&&fl.mk===p){mv(p,cl(fl.ex+(CX-fl.ex)*.1,8,W-8),fl.ey-A[p.t].dir*3.5,sp*1.2,dt);continue}/* 수신자 마커: 착지점 바로 골대 쪽(3.5px)에서 수비 — 공이 이 거리 안을 지나면 기존 가로채기 판정이 적용됨 */
@@ -339,7 +339,7 @@ function sim(dt){
    for(const q of P)if(q!==p&&q.t==p.t){const dx=x-q.x,dy=y-q.y,dd=Math.hypot(dx,dy);if(dd<9&&dd>.1){x+=dx/dd*(9-dd)*.6;y+=dy/dd*(9-dd)*.6}}}
   mv(p,x,y,s,dt)}}
 function giveBall(p){if(OF){const o=OF;OF=null;if(p.t==o.t&&o.s.includes(p))return offside(p)}rec(p);if(DV&&DV.p===p)DV.v=0;lT=p.t;if(ptm!=p.t)cp={t:ptm,tm:3};ptm=p.t;car=p;fl=null;lo=null;p.st=0;if(S=='EXEC')afterExec()}
-function afterExec(){ex=null;if(car.t==0&&car.y<115)toDecision();else if(car.t==1){S='MSG';msg='BALL LOST';timer=1.1;after=()=>{S='RESUME';timer=.35;ui()};ui()}else{S='RESUME';timer=.35;ui()}}
+function afterExec(){ex=null;if(car.t==0&&car.y<115)toDecision();else if(car.t==1){if(mpCB(car,1))return mpWin(car,'BALL WON!');S='MSG';msg='BALL LOST';timer=1.1;after=()=>{S='RESUME';timer=.35;ui()};ui()}else{S='RESUME';timer=.35;ui()}}
 function toDecision(){S='DECISION';ui()}
 function fly(ex_,ey_,sp,o){const pr=car;lT=o.team;ptm=o.team;car=null;lo=null;const mx=(ball.x+ex_)/2,my=(ball.y+ey_)/2;fl=Object.assign({sx:ball.x,sy:ball.y,ex:ex_,ey:ey_,cx:mx+(o.bx||0),cy:my+(o.by||0),sp,u:0,len:Math.max(8,Math.hypot(ex_-ball.x,ey_-ball.y)),seen:{},ip:.2},o);OF=!o.shot&&pr?offSnap(pr):null;pasF=!o.shot&&pr?{p:pr,t:pr.t}:null;if(pr)lastB=pr}
 function landPass(f){let b=null,m=1e9;for(const p of P){const d=Math.hypot(p.x-f.ex,p.y-f.ey)*(p.t==f.team?1:1.3);if(d<m){m=d;b=p}}if(b&&Math.hypot(b.x-f.ex,b.y-f.ey)<4.5)giveBall(b);else{const a=Math.atan2(f.ey-f.sy,f.ex-f.sx),v=Math.min(60,f.sp*.3);lo={vx:Math.cos(a)*v,vy:Math.sin(a)*v,ps:1}}}
@@ -414,8 +414,9 @@ function upBall(dt){
   let b=null,m=3.6;for(const p of P)if(p.st<=0){const d=Math.hypot(p.x-ball.x,p.y-ball.y);if(d<m){m=d;b=p}}if(b)giveBall(b);return}
  if(!fl)return;fl.u=Math.min(1,fl.u+dt*fl.sp*(fl.shot?1.35-.7*fl.u:1)/fl.len);const u=fl.u,v=1-u;
  ball.x=v*v*fl.sx+2*v*u*fl.cx+u*u*fl.ex;ball.y=v*v*fl.sy+2*v*u*fl.cy+u*u*fl.ey;if(OUTX())return lineOut();if(OUTY())return endOut();if(gkGuard())return;if(pGoal())return;if(offInt())return;
- if(!fl.shot)for(const p of P)if(p.t!=fl.team&&!fl.seen[p.n]&&Math.hypot(p.x-ball.x,p.y-ball.y)<4.5){fl.seen[p.n]=1;
-  if(R()<Math.min(mpCB(p,1)?.85:1,(1+mpCB(p,.6))*fl.ip*(.4+stat(p,'defending')/20))){const a=Math.atan2(fl.ey-fl.sy,fl.ex-fl.sx),s=fl.sp*.3;lo=away(p,{vx:Math.cos(a)*s+(R()-.5)*30,vy:Math.sin(a)*s+(R()-.5)*30,ps:1});fl=null;OF=null;icpt(p);p.st=.12;lT=p.t;return}}
+ if(fl.shot&&ON&&mpBlk())return;
+ if(!fl.shot)for(const p of P)if(p.t!=fl.team&&!fl.seen[p.n]&&Math.hypot(p.x-ball.x,p.y-ball.y)<4.5+mpCB(p,1.5)){fl.seen[p.n]=1;
+  if(R()<Math.min(mpCB(p,1)?.85:1,(1+mpCB(p,.6))*fl.ip*(.4+stat(p,'defending')/20))){if(mpCB(p,1)){OF=null;icpt(p);return mpWin(p,'INTERCEPTED!')}const a=Math.atan2(fl.ey-fl.sy,fl.ex-fl.sx),s=fl.sp*.3;lo=away(p,{vx:Math.cos(a)*s+(R()-.5)*30,vy:Math.sin(a)*s+(R()-.5)*30,ps:1});fl=null;OF=null;icpt(p);p.st=.12;lT=p.t;return}}
  if(u>=1){const f=fl;fl=null;f.land(f)}}
 function autoPass(){const t=car.t,dir=t?1:-1,os=offSet(car);let best=null,bs=-1e9;
  for(const m of P){if(m.t!=t||m===car||!m.i||os.includes(m)&&R()<(TR[1-t].u>-.6?.55:.9))continue;const d=dist(m,car);if(d<15||d>80)continue;let om=1e9;for(const o of P)if(o.t!=t)om=Math.min(om,Math.hypot(o.x-m.x,o.y-m.y));
@@ -441,6 +442,7 @@ function deflect(p,ax,ay,dx,dy,sp){const m=Math.hypot(dx,dy)||1,ux=dx/m,uy=dy/m,
  const x=p.x+h1*A*rx+h2*B*fx,y=p.y+h1*A*ry+h2*B*fy;let g=0;for(let u=0;u<2;u+=.02){const w=(1-Math.exp(-2.6*u))/2.6;if(y+vy*w<=GL-1&&Math.abs(x+vx*w-CX)<=GW-1){g=1;break}}
  return{x,y,vx,vy,g}}
 function shotEnd(res,sh,bl,df){cd=55;ex=null;if(res=='SAVED'&&!touch(P[11]))res='GOAL';if(sh&&res!='GOAL'){sh.s.sh++;if(res=='SAVED'){sh.s.sot++;P[11].s.sv++}else if(res=='BLOCKED'&&bl)bl.s.bk++}if(res=='GOAL'){if(sh)lastB=sh;return goal(0)}
+ if(res=='BLOCKED'&&mpCB(bl,1))return mpWin(bl,'BLOCKED!');/* 온라인: 직접 조종한 수비수가 막으면 굴절 없이 수비 성공 */
  if(res=='BLOCKED'&&df){/* 굴절: 멈추지 않고 맞은 지점에서 굴절 속도로 이어짐. 골문 안으로 향하면 60%는 키퍼가 처리(ps), 나머지는 일반 골 판정(pGoal) */
   lo={vx:df.vx,vy:df.vy,df:{sh,bl}};if(df.g&&R()<.6)lo.ps=1;bl.st=.35;lT=1;if(df.fk)WS=1.8;/* 프리킥 벽 충돌: 튕겨 나오는 모습을 일반 속도로 보여준 뒤 배속 복귀 */pop={p:bl,u:Date.now()+900,t:'BLOCKED',c:'#fff'};S='RESUME';timer=.2;ui();return}
  result(res=='SAVED'?'SAVED!':res,1,()=>{if(res=='BLOCKED'){lo={vx:(R()-.5)*60,vy:(R()-.5)*60+10};lT=1}else{car=P[11];if(DV)DV.v=0;if(res=='WIDE')nof={p:car,x:car.x,y:car.y}}S='RESUME';timer=.35;ui()})}
@@ -458,12 +460,12 @@ function step(dt){
   if(S!='MSG'&&S!='DANG'&&S!='DECISION'&&S!='VIEW'){if(!HF&&clock>=45)halfTime();else if(ET)etChk();else if(clock>=90){if(XT<0)stoppage();if(clock>=90+XT)fullTime()}}}
  else if(S=='EXEC'){if(!PK)clock+=dt*.25;
   if(ex&&ex.k=='drib'&&car){mv(car,ex.tx,ex.ty,(P.some(q=>q.t==1&&dist(q,car)<10)?28:40)*smul(car,true)*(dS&&Math.hypot(car.x-dS.x,car.y-dS.y)<dS.d?1.8:1),dt);
-   for(const p of P)if(p.t==1){const d=Math.hypot(p.x-ball.x,p.y-ball.y);if(d>7)p.tk=0;else if(d<3.6&&!p.tk&&p.st<=0){p.tk=1;if(R()<cl(.16+.52*stat(car,'dribbling')/20-.15*(stat(p,'defending')-12)/20-mpCB(p,.15),.15,.75)){dS={x:car.x,y:car.y,d:.1*Math.hypot(ex.tx-car.x,ex.ty-car.y)};car.vx+=car.dx*30;car.vy+=car.dy*30;pop={p:car,u:Date.now()+900};car.s.dw++;p.st=.3}else{pop={p:car,u:Date.now()+900,t:'드리블 실패!',c:'#ff4b4b'};cd=20;tackle(car,p,1,ball)}break}}
+   for(const p of P)if(p.t==1){const d=Math.hypot(p.x-ball.x,p.y-ball.y);if(d>7)p.tk=0;else if(d<3.6&&!p.tk&&p.st<=0){p.tk=1;if(R()<cl(.16+.52*stat(car,'dribbling')/20-.15*(stat(p,'defending')-12)/20-mpCB(p,.15),.15,.75)){dS={x:car.x,y:car.y,d:.1*Math.hypot(ex.tx-car.x,ex.ty-car.y)};car.vx+=car.dx*30;car.vy+=car.dy*30;pop={p:car,u:Date.now()+900};car.s.dw++;p.st=.3}else if(mpCB(p,1)){p.s.tk++;car.s.dl++;lost(car);cd=20;mpWin(p,'TACKLED!')}else{pop={p:car,u:Date.now()+900,t:'드리블 실패!',c:'#ff4b4b'};cd=20;tackle(car,p,1,ball)}break}}
    if(S=='EXEC'&&car&&Math.hypot(car.x-ex.tx,car.y-ex.ty)<1.5)afterExec()}
   sim(dt);upBall(dt)}
  else if(S=='DANG'){timer-=dt;if(timer<=0)autoShot(1,.15)}
  else if(S=='MSG'){timer-=dt;if(timer<=0)after()}
- else if(S=='DMOVE')mpMove(dt);else if(S=='FKM')fkMove(dt);else if(S=='FKR')fkRun(dt);else if(S=='SO')soStep(dt);
+ else if(S=='FKM')fkMove(dt);else if(S=='FKR')fkRun(dt);else if(S=='SO')soStep(dt);
  else if(S=='PKM'){timer-=dt;if(timer<=0){S='PKS';pkRender();$('toast').classList.remove('on');ui()}}}
 /* ===== 페널티킥: 경기당 10%(최대 1회), pkT 이후 우리 공격 때 발생. 성공/실패는 키커를 고르기 전에 70:30 으로 먼저 정해 PK.ok 에 두고, 키퍼 연출·득점 판정 모두 이 값만 따른다 ===== */
 const pkChk=()=>{if(pkD||pkT<0||clock<pkT||PK)return 0;if(!(ptm==0&&ball.y<H*.6)&&clock<pkT+3)return 0;pkStart();return 1};
@@ -572,7 +574,7 @@ function plan(){if(!path.length||!car)return null;const s=path[0],e=path[path.le
  if(dy>-6)return null;const nx=-dy/l,ny=dx/l;let dev=0;for(const q of path){const v=(q[0]-s[0])*nx+(q[1]-s[1])*ny;if(Math.abs(v)>Math.abs(dev))dev=v}
  const k=bd(dev,'shooting');return{tx:car.x+dx*(car.y-GL)/-dy,ty:GL,curl:Math.abs(dev)>4,bx:nx*k,by:ny*k}}
 function commit(p0){const pl=p0||plan();if(!pl){hint(mode=='shoot'?'위쪽 골대 방향으로 드래그하세요':'조금 더 길게 드래그하세요');return}
- if(ON&&!p0)return mpAsk(pl);/* 온라인: 먼저 상대가 수비수를 골라 움직이고(mpGo → mpMove), 같은 조준(p0)으로 다시 들어와 실행 */
+ if(ON&&!p0)return mpAsk(pl);/* 온라인: 먼저 상대가 조종할 수비수와 이동 지점을 정하고(mpGo), 같은 조준(p0)으로 다시 들어와 양쪽 행동을 동시에 실행 */
  if(PK&&PK.z==null)return pkShot(pl);
  if(PK&&!PK.go){PK.go=1;PK.t=0;S='FKR';ui();return}/* 프리킥: 먼저 키커가 공으로 달려가고(fkRun), 도착하면 같은 commit 이 다시 불려 아래 일반 슈팅 처리로 이어짐 */
  if(mode=='drib'){dS=null;ex={k:'drib',tx:pl.tx,ty:pl.ty};S='EXEC';ui();return}
@@ -599,7 +601,7 @@ function commit(p0){const pl=p0||plan();if(!pl){hint(mode=='shoot'?'위쪽 골�
      for(const sp of[9,11,13]){if(ab-sp<3)continue;const q=cl(gk.x+sg*Math.min(ab-sp,VD*Math.max(0,T-.07)),8,W-8),r=sim(GL-3,q,fw);if(r[0]>=RC+.3){mx1=q;wt=fw?0:r[2];dv=fw==1?r[3]:0;break}}if(mx1!=null)break}if(mx1!=null)break}
    if(mx1==null){ex_=ex0;const z=sim(GL+3,gx);if(z[1]<=RC*.9){res='SAVED';ey_=GL+3;wt=z[2]}else{mx1=cl(gk.x+s0*3,8,W-8);wt=sim(GL-3,mx1)[2]}}}}
  if(FK)PK.w.forEach(p=>p.jt=Date.now());/* 수비벽 점프 */
- S='EXEC';ex={k:'shot'};fly(ex_,ey_,spd,{shot:1,vis:1,team:0,tx,gk,bx:curl?pl.bx:0,by:curl?pl.by:0,land:()=>{if(FK)fkEnd();shotEnd(res,sh0,blk,df)}});
+ S='EXEC';ex={k:'shot'};fly(ex_,ey_,spd,{shot:1,vis:1,team:0,tx,gk,sh:sh0,bx:curl?pl.bx:0,by:curl?pl.by:0,land:()=>{if(FK)fkEnd();shotEnd(res,sh0,blk,df)}});
  if(res=='SAVED')gkDive(gk,gx,gy,0,wt);else if(res=='GOAL')gkDive(gk,mx1,gy,dv,wt)/* 실점 장면도 공 쪽으로 다이빙하지만 닿지 못하고 놓침 */
  ui()}
 function hint(t){$('hint').textContent=WIDE&&typeof t=='string'?t.replace(/아래 패드/g,'오른쪽 패드'):t}
@@ -642,7 +644,7 @@ function draw(){g.setTransform(Z,0,0,Z,0,-Math.round(cam*Z));g.imageSmoothingEna
  pg.setTransform(pad.width/W,0,0,pad.width/W,0,0);pg.imageSmoothingEnabled=false;pg.fillStyle='#161d29';pg.fillRect(0,0,W,VH);pg.fillStyle='#243044';
  for(let y=10;y<VH;y+=10)for(let x=10;x<W;x+=10)pg.fillRect(x,y,1,1);
  if((S=='AIM'||ak)&&path.length){pg.strokeStyle='#ffe14d';pg.lineWidth=1;pg.beginPath();path.forEach((q,i)=>i?pg.lineTo(q[0],q[1]):pg.moveTo(q[0],q[1]));pg.stroke();const q=path[path.length-1];pg.fillStyle='#ffe14d';pg.fillRect(Math.round(q[0])-2,Math.round(q[1])-2,5,5)}
- else{pg.font='6px "Press Start 2P",monospace';pg.textAlign='center';pg.fillStyle=S=='AIM'?AC:ak?'#ffe14d':'#566178';pg.fillText(S=='AIM'?'DRAG HERE':ak?'MOVE DEFENDER':S=='DECISION'?'CHOOSE ACTION':PK?PK.z!=null?'FREE KICK':'PENALTY KICK':S=='WAITK'||S=='DMOVE'?'DEFENDER...':vw&&dg?'DEFEND!':'FAST FORWARD >>',CX,VH/2+3)}if(ak)mpPad()}
+ else{pg.font='6px "Press Start 2P",monospace';pg.textAlign='center';pg.fillStyle=S=='AIM'?AC:ak?'#ffe14d':'#566178';pg.fillText(S=='AIM'?'DRAG HERE':ak?'MOVE DEFENDER':S=='DECISION'?'CHOOSE ACTION':PK?PK.z!=null?'FREE KICK':'PENALTY KICK':S=='WAITK'?'DEFENDER...':vw&&dg?'DEFEND!':'FAST FORWARD >>',CX,VH/2+3)}if(ak)mpPad()}
 let lt=performance.now(),camT=0;
 function loop(t){if(tab!='match'){lt=t;requestAnimationFrame(loop);return}const dt=Math.min(.05,(t-lt)/1000);lt=t;if(ON)mpTick();if(S=='AUTO'||S=='RESUME'){let rem=dt*(WS>0?1:FF);while(rem>0){const h=Math.min(.025,rem);rem-=h;step(h);if(S!='AUTO'&&S!='RESUME')break}}else step(dt);
  const vw=ON&&S=='VIEW',raw=vw?(MPW.test(ON.rs)?H-VH:cl(ball.y-VH*.45,0,H-VH)):MPW.test(S)?0:cl(ball.y-VH*.55,0,H-VH),f=S=='AIM';
@@ -1174,8 +1176,10 @@ let CL=ld(K6);if(!okCL(CL))clMake();else clAdv();
    공격 찬스: 팀마다 전반 3 · 후반 3 번(mpPlan, 두 팀이 번갈아). 진행 기기의 내 차례면 원본 조종 상황(DECISION) 그대로,
         상대 차례면 그 순간의 경기 상태를 통째로 넘겨(mpHand → mpTake) 상대 기기가 진행 기기가 되어 원본과 똑같이 조종한다. 예정된 찬스가 남아 있으면 전·후반 종료를 미룸(mpHold).
    수비: 공격자가 행동(드리블·패스·슛)을 고르고 조준을 끝내면 경기를 멈춘 채(S='WAITK') 수비자에게 어떤 행동인지만 알림 → 수비자가 6초 안에 조종할 수비수(기본 = 공에 가장 가까운 선수, 경기장 터치로 변경)를
-        고르고 아래 패드를 드래그해 이동 지점을 정함 → 그 수비수가 먼저 .5초 달리고(S='DMOVE') 공격 행동이 실행되며, 실행 중에도 계속 그 지점으로 달림(AI 대신). 시간 초과면 전원 AI.
-        직접 조종한 수비수는 판정이 유리함(mpCB): 드리블 경합 -15%p, 패스 차단 확률 1.6배(최대 85%), 슛 길목 차단 70%(기본 55%). 키퍼 선방·골 판정은 원본 그대로(AI). PK·프리킥·연장전은 온라인에서 없음.
+        고르고 아래 패드를 드래그해 이동 지점을 정함 → 공격 행동과 수비수의 이동이 동시에 실행되고(EXEC), 그 수비수는 AI 대신 그 지점으로 전력 질주(mpRun). 시간 초과면 전원 AI.
+        직접 조종한 수비수는 판정이 유리함(mpCB): 드리블 경합 -15%p, 패스 차단 반경 +1.5 · 확률 1.6배(최대 85%), 슛은 날아가는 공이 5.5px 안을 지나면 70% 로 막음(mpBlk, 찰 때 이미 길목이면 70%).
+        수비 성공(직접 조종한 수비수가 패스를 가로챔 · 슛을 막음 · 드리블을 뺏음 · 공을 따냄): 그 순간 1.4초 멈춰 장면을 보여 준 뒤(mpWin) 그 수비수가 공을 잡고 배속 진행으로 돌아감.
+        키퍼 선방·골 판정은 원본 그대로(AI). PK·프리킥·연장전은 온라인에서 없음.
    메시지: hi(팀 이름·선발) / go(시작) / s(스냅숏) / hand(진행 넘김) / act(공격 행동 알림) / def(수비수 조종) / toast / end(최종 기록) / bye(나감) / p(생존 확인) / full(방이 참) ===== */
 const MPV=1,MPK='fsq_mpcode',MPU=['https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];
 let MPL=null;/* 연결(로비~경기 끝): {code,peer,conn,host,hi:{n,ln}(상대 팀),ok,up,dead,t,rx(마지막 수신 시각)} */
@@ -1259,7 +1263,7 @@ function mpTake(st){if(!mpLoad(st)||!car||car.t)return mpAbort('동기화 오류
 function mpSnap(){const t=performance.now();if(S==ON.lS&&t-ON.ls<(/^(DECISION|AIM|WAITK)$/.test(S)?250:50))return;ON.ls=t;ON.lS=S;const a=[];for(const p of P)a.push(Math.round(p.x*10),Math.round(p.y*10));
  mpTx({t:'s',S,m:S=='MSG'?msg:'',c:q2(clock),sc:score,xt:XT,hf:HF,p:a,b:[q2(ball.x),q2(ball.y),fl?fl.shot?2:1:lo&&Math.hypot(lo.vx,lo.vy)>6?1:0,fl&&fl.ex<fl.sx?1:0],car:car?car.n:-1,
   dv:DV?[DV.p.n,q2(DV.e),DV.d==null?9:DV.d,q2(DV.tx)]:0,pop:pop&&Date.now()<pop.u?[pop.p.n,pop.t||'',pop.c||'',pop.u-Date.now()]:0})}
-const mpMsg=m=>m=='GOAL!'?OPP[2]+' GOAL':/ GOAL$/.test(m)?'GOAL!':m=='BALL LOST'?'BALL WON':m.slice(0,24);
+const mpMsg=m=>/^(INTERCEPTED!|BLOCKED!|TACKLED!|BALL WON!)$/.test(m)?'수비 성공!':m=='GOAL!'?OPP[2]+' GOAL':/ GOAL$/.test(m)?'GOAL!':m=='BALL LOST'?'BALL WON':m.slice(0,24);
 function mpSee(d){if(S!='VIEW'||!Array.isArray(d.p)||d.p.length!=44||!d.p.every(Number.isFinite)||!Array.isArray(d.b)||!Number.isFinite(d.b[0])||!Number.isFinite(d.b[1]))return;
  const pl=n=>Number.isInteger(n)&&n>=0&&n<22?P[mpF(n)]:null,rs=String(d.S),ch=rs!=ON.rs,v=d.dv,o=d.pop;ON.s0=ON.s1;ON.s1=d;ON.t1=performance.now();ON.rs=rs;ON.rm=rs=='MSG'?mpMsg(String(d.m||'')):'';
  clock=+d.c||0;if(Array.isArray(d.sc))score=[d.sc[1]|0,d.sc[0]|0];XT=Number.isFinite(d.xt)?d.xt:-1;HF=d.hf?1:0;car=pl(d.car);lo=null;
@@ -1273,23 +1277,25 @@ function mpTick(){const n=performance.now();if(S=='VIEW'){mpPos(cl((n-ON.t1)/60,
 /* ----- 공격 행동 ↔ 수비수 조종 ----- */
 function mpAsk(pl){ON.sp=pl;ON.cd=null;ON.wt=performance.now()+MPDT+2500;S='WAITK';mpTx({t:'act',k:mode});ui()}/* 공격 기기: 답이 제때 안 오면 수비수 조종 없이 진행 */
 function mpGo(d){if(S!='WAITK'||!ON.sp)return;ON.cd=null;if(d&&Number.isInteger(d.n)&&d.n>0&&d.n<11&&Number.isFinite(d.x)&&Number.isFinite(d.y))ON.cd={p:P[11+d.n],x:cl(W-d.x,5,W-5),y:cl(H-d.y,4,H-4)};/* 상대 화면은 180도 돌아가 있음 */
- timer=ON.cd?.5:0;S='DMOVE';ui()}
-function mpMove(dt){const c=ON.cd;timer-=dt;if(c&&c.p.st<=0)mv(c.p,c.x,c.y,38*smul(c.p,false),dt);if(timer<=0){const pl=ON.sp;ON.sp=null;S='AIM';commit(pl)}}/* 수비수가 먼저 달린 뒤 공격 행동 실행 */
+ const pl=ON.sp;ON.sp=null;S='AIM';commit(pl)}/* 공격 행동과 수비수 이동을 동시에 시작 */
+function mpRun(p,dt){const c=ON.cd,dx=c.x-p.x,dy=c.y-p.y,d=Math.hypot(dx,dy),v=50*smul(p,false),s=Math.min(d,v*dt);if(d>.3){p.x=cl(p.x+dx/d*s,5,W-5);p.y=cl(p.y+dy/d*s,4,H-4);p.vx=dx/d*v;p.vy=dy/d*v;p.dx=dx/d;p.dy=dy/d}else p.vx=p.vy=0}
+function mpBlk(){const c=ON.cd,f=fl;if(!c||f.cb||!f.sh||S!='EXEC')return 0;const p=c.p;if(p.st>0||ball.y<GL+3||Math.hypot(p.x-ball.x,p.y-ball.y)>=5.5)return 0;f.cb=1;if(R()>=.7)return 0;fl=null;if(DV)DV.v=0;shotEnd('BLOCKED',f.sh,p,null);return 1}
+function mpWin(p,txt){lastP=OF=pasF=dS=ex=null;result(txt,1.4,()=>{giveBall(p);S='RESUME';timer=.35;ui()});pop={p,u:Date.now()+1400,t:'수비 성공!',c:'#5dff72'}}/* 수비 성공: 장면을 멈춰 보여 준 뒤 그 수비수가 공을 잡고 재개 */
 /* 수비 기기 */
 function mpPrompt(k){let b=P[1],m=1e9;for(let i=1;i<11;i++){const d=dist(P[i],ball);if(d<m){m=d;b=P[i]}}ON.ask={u:performance.now()+MPDT,k:/^(drib|pass|shoot)$/.test(k)?k:'shoot',p:b};ON.pick=null;path=[];drag=false;ui()}
 function mpAim(){const a=ON.ask;if(!a||path.length<2)return null;const s=path[0],e=path[path.length-1],dx=e[0]-s[0],dy=e[1]-s[1];return Math.hypot(dx,dy)<8?null:{x:cl(a.p.x+dx*1.3,5,W-5),y:cl(a.p.y+dy*1.3,4,H-4)}}/* 드래그 방향·거리만큼 이동(드리블 조준과 같은 배율) */
 function mpDef(){const a=ON.ask,t=mpAim();path=[];if(!a)return;if(!t){hint('조금 더 길게 드래그하세요');return}ON.ask=null;ON.pick={p:a.p,x:t.x,y:t.y};mpTx({t:'def',n:a.p.n,x:q2(t.x),y:q2(t.y)});ui()}
 function mpNoDef(){ON.ask=ON.pick=null;path=[];drag=false;mpTx({t:'def',n:-1});ui()}
 function mpSel(e){if(!(ON&&ON.ask))return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,y=cam+(e.clientY-r.top)/r.height*VH;let b=null,m=30;for(let i=1;i<11;i++){const d=Math.hypot(P[i].x-x,P[i].y-y);if(d<m){m=d;b=P[i]}}if(b){ON.ask.p=b;ui()}}
-function mpMark(){const a=ON.ask,k=a||(ON.pick&&/^(WAITK|DMOVE|EXEC)$/.test(ON.rs)?ON.pick:null);if(!k)return;const p=k.p,x=sn(p.x),y=sn(p.y),t=a?(drag?mpAim():null):k;
+function mpMark(){const a=ON.ask,k=a||(ON.pick&&/^(WAITK|EXEC)$/.test(ON.rs)?ON.pick:null);if(!k)return;const p=k.p,x=sn(p.x),y=sn(p.y),t=a?(drag?mpAim():null):k;
  if(t){bez(g,[p.x,p.y,(p.x+t.x)/2,(p.y+t.y)/2],[t.x,t.y],'#fff');g.fillStyle='#fff';g.fillRect(Math.round(t.x)-1,Math.round(t.y)-1,3,3)}
  if(!a||Math.floor(Date.now()/180)%3){g.fillStyle='#fff';g.fillRect(x-1,y-7,3,1);g.fillRect(x,y-6,1,1)}
  if(p.ref){g.font='bold 4.2px system-ui,sans-serif';g.textAlign='center';g.lineWidth=1.3;g.strokeStyle='rgba(0,0,0,.85)';const nm=shN(p.ref.name);g.strokeText(nm,x,y-9);g.fillStyle='#fff';g.fillText(nm,x,y-9)}}
 function mpPad(){const k=cl((ON.ask.u-performance.now())/MPDT,0,1);pg.fillStyle='#ffe14d';pg.fillRect(0,0,Math.round(W*k),4)}
 const MPA={drib:'드리블',pass:'패스',shoot:'슛'};
-function mpHint(){if(S=='WAITK')return'상대가 수비수를 고르는 중…';if(S=='DMOVE')return'상대 수비수가 움직입니다';
- if(S=='VIEW'){const a=ON.ask,r=ON.rs;if(a)return'상대의 '+MPA[a.k]+'! · 수비수 '+pn(a.p)+' 조종(경기장을 터치해 변경) · 아래 패드를 드래그해 이동';if(ON.stale)return'상대 기기의 응답을 기다리는 중…';
-  return r=='DECISION'||r=='AIM'?'상대 공격 찬스 · 상대가 행동을 고르면 수비수를 직접 움직입니다':/^(WAITK|DMOVE|EXEC)$/.test(r)?(ON.pick?'수비수 '+pn(ON.pick.p)+' 이동!':'상대 공격 진행 중'):'온라인 맞짱 · 자동 진행 중 · 고속 재생'}
+function mpHint(){if(S=='WAITK')return'상대가 수비수를 고르는 중…';
+ if(S=='VIEW'){const a=ON.ask,r=ON.rs;if(r=='MSG'&&ON.rm=='수비 성공!')return'수비 성공! · 공을 따냈습니다';if(a)return'상대의 '+MPA[a.k]+'! · 수비수 '+pn(a.p)+' 조종(경기장을 터치해 변경) · 아래 패드를 드래그해 이동';if(ON.stale)return'상대 기기의 응답을 기다리는 중…';
+  return r=='DECISION'||r=='AIM'?'상대 공격 찬스 · 상대가 행동을 고르면 수비수를 직접 움직입니다':/^(WAITK|EXEC)$/.test(r)?(ON.pick?'수비수 '+pn(ON.pick.p)+' 이동!':'상대 공격 진행 중'):'온라인 맞짱 · 자동 진행 중 · 고속 재생'}
  return S=='AUTO'||S=='RESUME'||S=='MSG'?'온라인 맞짱 · 자동 진행 중 · 고속 재생':''}
 /* 생존 확인: 2초마다 신호를 보내고, 3초 넘게 조용하면 안내, 25초 넘으면 경기 종료 */
 setInterval(()=>{const L=MPL;if(!ON||!L||S=='END')return;mpTx({t:'p'});const q=performance.now()-L.rx;if(q>25000)return mpAbort('상대방의 응답이 없어 경기를 종료했습니다');const st=q>3000?1:0;if(st!=ON.stale){ON.stale=st;ui()}},2000);
